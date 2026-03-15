@@ -5,7 +5,7 @@
 | UWA ID | Name | GitHub Username |
 |--------|------|-----------------|
 |23903382|Anthony Do|zephris|
-|||
+|24038633|Shuo Li|DAZAI0336|
 |||
 
 ## 3. Application launch
