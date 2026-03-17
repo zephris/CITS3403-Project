@@ -6,7 +6,7 @@
 |--------|------|-----------------|
 |23903382|Anthony Do|zephris|
 |24038633|Shuo Li|DAZAI0336|
-|23830475|zhirui chen|chenzhirui1|
+|23830475|zhirui chen|zhiruiChen1|
 
 ## 3. Application launch
 
