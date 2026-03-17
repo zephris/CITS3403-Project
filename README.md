@@ -1,6 +1,9 @@
 # CITS3403 Group Project - [Insert Project Name]
 ## 1. Project Drescription
-
+### Idea suggestion
+#### Anthony
+- reddit-like msg board with file uploading
+####
 ## 2. Group Members
 | UWA ID | Name | GitHub Username |
 |--------|------|-----------------|
