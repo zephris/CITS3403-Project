@@ -3,6 +3,7 @@
 ### Idea suggestion
 #### Anthony
 - reddit-like msg board with file uploading
+- UWA Student Marketplace
 ####
 ## 2. Group Members
 | UWA ID | Name | GitHub Username |
