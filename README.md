@@ -4,6 +4,7 @@
 #### Anthony
 - reddit-like msg board with file uploading
 - UWA Student Marketplace
+- Lost and found system
 ####
 ## 2. Group Members
 | UWA ID | Name | GitHub Username |
