@@ -3,6 +3,7 @@
 ### Idea suggestion
 #### Anthony
 - reddit-like msg board with file uploading
+#### Shuo Li
 - UWA Student Marketplace
 - Lost and found system
 ####
