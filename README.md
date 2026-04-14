@@ -3,6 +3,9 @@
 ### Idea suggestion
 #### Anthony
 - reddit-like msg board with file uploading
+#### Shuo Li
+- UWA Student Marketplace
+- Lost and found system
 ####
 ## 2. Group Members
 | UWA ID | Name | GitHub Username |
