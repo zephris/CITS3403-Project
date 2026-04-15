@@ -1,0 +1,18 @@
+html {
+    height: 100%;
+    margin: 5px;
+    padding: 0;
+}
+
+$primary: #000000;
+
+[data-bs-theme="dark"] {
+    --bs-primary: #{$primary};
+    --bs-primary-bg-subtle: #{$primary};
+    --bs-primary-bg-subtle-dark: #{$primary};
+
+    .btn-primary {
+        --bs-btn-bg: #{$primary};
+    }
+}
+
