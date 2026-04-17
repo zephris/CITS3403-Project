@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monopoly Web - Perth Edition</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="lobby_browser.css">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">🎲 Monopoly: Perth Edition</span>
+            <div>
+                <button class="btn btn-outline-light btn-sm me-2">Back</button>
+                <button class="btn btn-outline-light btn-sm">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row g-4">
+
+            <div class="col-lg-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="mb-3">Lobby Browser</h2>
+                        <p class="text-muted mb-4">Find a room to join or create your own lobby.</p>
+
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" placeholder="Search lobby by room name or host...">
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-primary w-100">Search</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        🎮 Available Lobbies
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Room Name</th>
+                                    <th>Host</th>
+                                    <th>Players</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Perth Room 1</td>
+                                    <td>Player 1</td>
+                                    <td>2 / 4</td>
+                                    <td><span class="badge bg-success">Waiting</span></td>
+                                    <td><button class="btn btn-sm btn-primary">Join</button></td>
+                                </tr>
+                                <tr>
+                                    <td>WA Monopoly Fans</td>
+                                    <td>Anthony</td>
+                                    <td>4 / 4</td>
+                                    <td><span class="badge bg-secondary">Full</span></td>
+                                    <td><button class="btn btn-sm btn-secondary" disabled>Full</button></td>
+                                </tr>
+                                <tr>
+                                    <td>City Match</td>
+                                    <td>Shuo</td>
+                                    <td>1 / 4</td>
+                                    <td><span class="badge bg-success">Waiting</span></td>
+                                    <td><button class="btn btn-sm btn-primary">Join</button></td>
+                                </tr>
+                                <tr>
+                                    <td>Late Night Game</td>
+                                    <td>Dazai</td>
+                                    <td>3 / 4</td>
+                                    <td><span class="badge bg-warning text-dark">Starting Soon</span></td>
+                                    <td><button class="btn btn-sm btn-primary">Join</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white fw-bold">
+                        ➕ Quick Actions
+                    </div>
+                    <div class="card-body d-grid gap-3">
+                        <button class="btn btn-success">Create Lobby</button>
+                        <button class="btn btn-outline-primary">Quick Join</button>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white fw-bold">
+                        📊 Lobby Info
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Online Players:</strong> 12</p>
+                        <p><strong>Open Rooms:</strong> 4</p>
+                        <p class="mb-0"><strong>Game Mode:</strong> Perth Edition</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
