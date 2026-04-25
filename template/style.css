@@ -1,0 +1,55 @@
+body { background-color: #f4f4f9; }
+        
+        /* Monopoly Board Grid System */
+        .monopoly-board {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            grid-template-rows: repeat(11, 1fr);
+            gap: 2px;
+            background-color: #333;
+            border: 2px solid #333;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+        }
+
+        /* Base Tile Style */
+        .tile {
+            background-color: #cce3c6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            text-align: center;
+            padding: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Property Color Headers */
+        .color-bar {
+            width: 100%;
+            height: 22%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-bottom: 1px solid #333;
+        }
+
+        /* Center Area */
+        .center-space {
+            grid-column: 2 / 11;
+            grid-row: 2 / 11;
+            background-color: #eaf1e8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Corner Tiles */
+        .corner { background-color: #eaf1e8; font-weight: bold; font-size: 0.8rem;}
+        
+        .price { font-weight: bold; margin-top: auto; }
+        .title { margin-top: 25px; font-weight: 600; line-height: 1.1;}
+        .non-prop-title { margin-top: auto; margin-bottom: auto; font-weight: bold;}
