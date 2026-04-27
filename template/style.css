@@ -59,20 +59,19 @@ body { background-color: #f4f4f9; }
         .non-prop-title { margin-top: auto; margin-bottom: auto; font-weight: bold;}
 
 
-        /* 防止页面横向溢出 */
+        /* Prevent horizontal overflow of the page */
         html, body {
             margin: 0;
             padding: 0;
             overflow-x: hidden;
         }
 
-        /* 棋盘外层允许在小屏幕横向滚动 */
+        /* Allow horizontal scrolling on smaller screens for the board container */
         .card-body {
             overflow-x: auto;
         }
 
-
-        /* 平板 */
+        /* Tablet screens */
         @media (max-width: 992px) {
             .monopoly-board {
                 min-width: 600px;
@@ -91,7 +90,7 @@ body { background-color: #f4f4f9; }
             }
         }
 
-        /* 手机 */
+        /* Mobile screens */
         @media (max-width: 768px) {
             .container-fluid {
                 padding-left: 8px;
@@ -141,7 +140,7 @@ body { background-color: #f4f4f9; }
             }
         }
 
-        /* 很小的手机 */
+        /* Small mobile devices */
         @media (max-width: 480px) {
             .monopoly-board {
                 min-width: 500px;
@@ -159,6 +158,7 @@ body { background-color: #f4f4f9; }
                 font-size: 0.4rem;
             }
         }
+
         /* Fix corner text overflow */
         .corner {
             overflow: hidden;
@@ -174,7 +174,7 @@ body { background-color: #f4f4f9; }
             font-size: 0.9rem !important;
         }
 
-        /* Bottom / corner text fix */
+        /* Adjust bottom and corner text layout */
         .tile {
             line-height: 1.1;
         }
