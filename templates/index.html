@@ -177,6 +177,12 @@
                             <p>
                                 <strong>Money:</strong> ${{ money }}
                             </p>
+                            
+                            {% if can_buy %}
+                                <a href="/buy" class="btn btn-success btn-sm mt-2">
+                                    Buy {{ location }} for ${{ property_price }}
+                                </a>
+                            {% endif %}
 
                             <a href="/reset" class="btn btn-outline-secondary btn-sm mt-2">
                                 Reset Game
@@ -216,9 +222,6 @@
                             <small>{{ log }}</small>
                         </p>
                     {% endfor %}
-                    <p class="mb-1"><small><strong>Player 1</strong> landed on Murray St.</small></p>
-                    <p class="mb-1"><small><strong>Player 1</strong> purchased Murray St for $60.</small></p>
-                    <p class="mb-1"><small><strong>Player 2</strong> rolled a 3.</small></p>
                 </div>
                 <div class="card-footer">
                     <div class="input-group input-group-sm">
