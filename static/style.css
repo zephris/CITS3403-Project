@@ -1,0 +1,184 @@
+body { background-color: #f4f4f9; }
+        
+        /* Monopoly Board Grid System */
+        .monopoly-board {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            grid-template-rows: repeat(11, 1fr);
+            gap: 2px;
+            background-color: #333;
+            border: 2px solid #333;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+             /* Responsive */
+            min-width: 650px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Base Tile Style */
+        .tile {
+            background-color: #cce3c6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            text-align: center;
+            padding: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Property Color Headers */
+        .color-bar {
+            width: 100%;
+            height: 22%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-bottom: 1px solid #333;
+        }
+
+        /* Center Area */
+        .center-space {
+            grid-column: 2 / 11;
+            grid-row: 2 / 11;
+            background-color: #eaf1e8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Corner Tiles */
+        .corner { background-color: #eaf1e8; font-weight: bold; font-size: 0.8rem;}
+        
+        .price { font-weight: bold; margin-top: auto; }
+        .title { margin-top: 25px; font-weight: 600; line-height: 1.1;}
+        .non-prop-title { margin-top: auto; margin-bottom: auto; font-weight: bold;}
+
+
+        /* Prevent horizontal overflow of the page */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Allow horizontal scrolling on smaller screens for the board container */
+        .card-body {
+            overflow-x: auto;
+        }
+
+        /* Tablet screens */
+        @media (max-width: 992px) {
+            .monopoly-board {
+                min-width: 600px;
+            }
+
+            .tile {
+                font-size: 0.55rem;
+            }
+
+            .center-space h2 {
+                font-size: 1.5rem;
+            }
+
+            .center-space h4 {
+                font-size: 1rem;
+            }
+        }
+
+        /* Mobile screens */
+        @media (max-width: 768px) {
+            .container-fluid {
+                padding-left: 8px;
+                padding-right: 8px;
+            }
+
+            .monopoly-board {
+                min-width: 560px;
+            }
+
+            .tile {
+                font-size: 0.45rem;
+                padding: 1px;
+            }
+
+            .title {
+                margin-top: 14px;
+                font-size: 0.45rem;
+            }
+
+            .price {
+                font-size: 0.45rem;
+            }
+
+            .corner {
+                font-size: 0.55rem;
+            }
+
+            .center-space h2 {
+                font-size: 1.1rem;
+                letter-spacing: 3px;
+            }
+
+            .center-space h4 {
+                font-size: 0.8rem;
+            }
+
+            .center-space .card {
+                width: 110px !important;
+                height: 60px !important;
+                font-size: 0.65rem;
+            }
+
+            .center-space button {
+                font-size: 0.75rem;
+                padding: 6px 10px;
+            }
+        }
+
+        /* Small mobile devices */
+        @media (max-width: 480px) {
+            .monopoly-board {
+                min-width: 500px;
+            }
+
+            .tile {
+                font-size: 0.4rem;
+            }
+
+            .title {
+                font-size: 0.4rem;
+            }
+
+            .price {
+                font-size: 0.4rem;
+            }
+        }
+
+        /* Fix corner text overflow */
+        .corner {
+            overflow: hidden;
+            word-break: break-word;
+            line-height: 1.1;
+        }
+
+        .corner .fs-4 {
+            font-size: 1.2rem !important;
+        }
+
+        .corner .fs-5 {
+            font-size: 0.9rem !important;
+        }
+
+        /* Adjust bottom and corner text layout */
+        .tile {
+            line-height: 1.1;
+        }
+
+        .price {
+            margin-bottom: 4px;
+        }
