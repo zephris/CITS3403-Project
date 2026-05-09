@@ -24,129 +24,369 @@
                 <div class="card-body">
                     <div class="monopoly-board">
                         
-                        <div class="tile corner" style="grid-column: 11; grid-row: 11;">
+                        <div class="tile corner {% if position == 0 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 11;">
                             <span class="fs-4 text-danger">GO</span><br>Collect $200
+                            {% if position == 0 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 0 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile corner" style="grid-column: 1; grid-row: 11;">
+                        <div class="tile corner {% if position == 10 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 11;">
                             IN<br><span class="fs-4">JAIL</span>
+                            {% if position == 10 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 10 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile corner" style="grid-column: 1; grid-row: 1;">
+                        <div class="tile corner {% if position == 20 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 1;">
                             FREE<br><span class="fs-5">PARKING</span>
+                            {% if position == 20 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 20 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile corner" style="grid-column: 11; grid-row: 1;">
+                        <div class="tile corner {% if position == 30 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 1;">
                             GO TO<br><span class="fs-4">JAIL</span>
+                            {% if position == 30 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 30 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
 
-                        <div class="tile" style="grid-column: 10; grid-row: 11;">
-                            <div class="color-bar" style="background-color: #8b4513;"></div> <span class="title">Hay Street</span><span class="price">$60</span>
+                        <div class="tile {% if position == 1 %}active-tile{% endif %}" style="grid-column: 10; grid-row: 11;">
+                            <div class="color-bar" style="background-color: #8b4513;"></div> <span class="title">Mediterranean Avenue</span><span class="price">$60</span>
+                            {% if position == 1 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 1 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 9; grid-row: 11; background-color: #eaf1e8;">
+                        <div class="tile {% if position == 2 %}active-tile{% endif %}" style="grid-column: 9; grid-row: 11; background-color: #eaf1e8;">
                             <span class="non-prop-title text-info">Community<br>Chest</span>
+                            {% if position == 2 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 2 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 8; grid-row: 11;">
-                            <div class="color-bar" style="background-color: #8b4513;"></div> <span class="title">Murray St</span><span class="price">$60</span>
+                        <div class="tile {% if position == 3 %}active-tile{% endif %}" style="grid-column: 8; grid-row: 11;">
+                            <div class="color-bar" style="background-color: #8b4513;"></div> <span class="title">Baltic Avenue</span><span class="price">$60</span>
+                            {% if position == 3 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 3 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 7; grid-row: 11; background-color: #eaf1e8;">
+                        <div class="tile {% if position == 4 %}active-tile{% endif %}" style="grid-column: 7; grid-row: 11; background-color: #eaf1e8;">
                             <span class="non-prop-title">Income Tax</span><span class="price text-danger">Pay $200</span>
+                            {% if position == 4 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 4 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 6; grid-row: 11;">
-                            <span class="non-prop-title">Perth Station</span><span class="price">$200</span>
+                        <div class="tile {% if position == 5 %}active-tile{% endif %}" style="grid-column: 6; grid-row: 11;">
+                            <span class="non-prop-title">Transperth</span><span class="price">$200</span>
+                            {% if position == 5 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 5 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 5; grid-row: 11;">
-                            <div class="color-bar" style="background-color: #87ceeb;"></div> <span class="title">Barrack St</span><span class="price">$100</span>
+                        <div class="tile {% if position == 6 %}active-tile{% endif %}" style="grid-column: 5; grid-row: 11;">
+                            <div class="color-bar" style="background-color: #87ceeb;"></div> <span class="title">Oriental Avenue</span><span class="price">$100</span>
+                            {% if position == 6 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 6 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 4; grid-row: 11; background-color: #eaf1e8;">
+                        <div class="tile {% if position == 7 %}active-tile{% endif %}" style="grid-column: 4; grid-row: 11; background-color: #eaf1e8;">
                             <span class="non-prop-title text-warning">Chance</span>
+                            {% if position == 7 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 7 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 3; grid-row: 11;">
-                            <div class="color-bar" style="background-color: #87ceeb;"></div> <span class="title">Wellington St</span><span class="price">$100</span>
+                        <div class="tile {% if position == 8 %}active-tile{% endif %}" style="grid-column: 3; grid-row: 11;">
+                            <div class="color-bar" style="background-color: #87ceeb;"></div> <span class="title">Vermont Avenue</span><span class="price">$100</span>
+                            {% if position == 8 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 8 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 2; grid-row: 11;">
-                            <div class="color-bar" style="background-color: #87ceeb;"></div> <span class="title">William St</span><span class="price">$120</span>
+                        <div class="tile {% if position == 9 %}active-tile{% endif %}" style="grid-column: 2; grid-row: 11;">
+                            <div class="color-bar" style="background-color: #87ceeb;"></div> <span class="title">Connecticut Avenue</span><span class="price">$120</span>
+                            {% if position == 9 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 9 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
 
-                        <div class="tile" style="grid-column: 1; grid-row: 10;">
-                            <div class="color-bar" style="background-color: #ff0080;"></div> <span class="title">Elizabeth Quay</span><span class="price">$140</span>
+                        <div class="tile {% if position == 11 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 10;">
+                            <div class="color-bar" style="background-color: #ff0080;"></div> <span class="title">St. Charles Place</span><span class="price">$140</span>
+                            {% if position == 11 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 11 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 1; grid-row: 9; background-color: #eaf1e8;">
-                            <span class="non-prop-title">Synergy<br>(Electric)</span><span class="price">$150</span>
+                        <div class="tile {% if position == 12 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 9; background-color: #eaf1e8;">
+                            <span class="non-prop-title">Western Power</span><span class="price">$150</span>
+                            {% if position == 12 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 12 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 1; grid-row: 8;">
-                            <div class="color-bar" style="background-color: #ff0080;"></div> <span class="title">Bell Tower</span><span class="price">$140</span>
+                        <div class="tile {% if position == 13 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 8;">
+                            <div class="color-bar" style="background-color: #ff0080;"></div> <span class="title">States Avenue</span><span class="price">$140</span>
+                            {% if position == 13 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 13 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 1; grid-row: 7;">
-                            <div class="color-bar" style="background-color: #ff0080;"></div> <span class="title">Swan River</span><span class="price">$160</span>
+                        <div class="tile {% if position == 14 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 7;">
+                            <div class="color-bar" style="background-color: #ff0080;"></div> <span class="title">Virginia Avenue</span><span class="price">$160</span>
+                            {% if position == 14 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 14 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 1; grid-row: 6;">
-                            <span class="non-prop-title">Fremantle Station</span><span class="price">$200</span>
+                        <div class="tile {% if position == 15 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 6;">
+                            <span class="non-prop-title">Australian Rail Track<br>Corporation</span><span class="price">$200</span>
+                            {% if position == 15 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 15 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 1; grid-row: 5;">
-                            <div class="color-bar" style="background-color: #ffa500;"></div> <span class="title">Fremantle Prison</span><span class="price">$180</span>
+                        <div class="tile {% if position == 16 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 5;">
+                            <div class="color-bar" style="background-color: #ffa500;"></div> <span class="title">St. James Place</span><span class="price">$180</span>
+                            {% if position == 16 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 16 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 1; grid-row: 4; background-color: #eaf1e8;">
+                        <div class="tile {% if position == 17 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 4; background-color: #eaf1e8;">
                             <span class="non-prop-title text-info">Community<br>Chest</span>
+                            {% if position == 17 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 17 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 1; grid-row: 3;">
-                            <div class="color-bar" style="background-color: #ffa500;"></div> <span class="title">Fremantle Markets</span><span class="price">$180</span>
+                        <div class="tile {% if position == 18 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 3;">
+                            <div class="color-bar" style="background-color: #ffa500;"></div> <span class="title">Tennessee Avenue</span><span class="price">$180</span>
+                            {% if position == 18 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 18 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 1; grid-row: 2;">
-                            <div class="color-bar" style="background-color: #ffa500;"></div> <span class="title">Cappuccino Strip</span><span class="price">$200</span>
+                        <div class="tile {% if position == 19 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 2;">
+                            <div class="color-bar" style="background-color: #ffa500;"></div> <span class="title">New York Avenue</span><span class="price">$200</span>
+                            {% if position == 19 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 19 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
 
-                        <div class="tile" style="grid-column: 2; grid-row: 1;">
-                            <div class="color-bar" style="background-color: #ff0000;"></div> <span class="title">Kings Park</span><span class="price">$220</span>
+                        <div class="tile {% if position == 21 %}active-tile{% endif %}" style="grid-column: 2; grid-row: 1;">
+                            <div class="color-bar" style="background-color: #ff0000;"></div> <span class="title">Kentucky Avenue</span><span class="price">$220</span>
+                            {% if position == 21 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 21 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 3; grid-row: 1; background-color: #eaf1e8;">
+                        <div class="tile {% if position == 22 %}active-tile{% endif %}" style="grid-column: 3; grid-row: 1; background-color: #eaf1e8;">
                             <span class="non-prop-title text-warning">Chance</span>
+                            {% if position == 22 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 22 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 4; grid-row: 1;">
-                            <div class="color-bar" style="background-color: #ff0000;"></div> <span class="title">Botanic Garden</span><span class="price">$220</span>
+                        <div class="tile {% if position == 23 %}active-tile{% endif %}" style="grid-column: 4; grid-row: 1;">
+                            <div class="color-bar" style="background-color: #ff0000;"></div> <span class="title">Indiana Avenue</span><span class="price">$220</span>
+                            {% if position == 23 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 23 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 5; grid-row: 1;">
-                            <div class="color-bar" style="background-color: #ff0000;"></div> <span class="title">War Memorial</span><span class="price">$240</span>
+                        <div class="tile {% if position == 24 %}active-tile{% endif %}" style="grid-column: 5; grid-row: 1;">
+                            <div class="color-bar" style="background-color: #ff0000;"></div> <span class="title">Illinois Avenue</span><span class="price">$240</span>
+                            {% if position == 24 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 24 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 6; grid-row: 1;">
-                            <span class="non-prop-title">Midland Station</span><span class="price">$200</span>
+                        <div class="tile {% if position == 25 %}active-tile{% endif %}" style="grid-column: 6; grid-row: 1;">
+                            <span class="non-prop-title">Aurizon</span><span class="price">$200</span>
+                            {% if position == 25 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 25 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 7; grid-row: 1;">
-                            <div class="color-bar" style="background-color: #ffff00;"></div> <span class="title">Scarborough Beach</span><span class="price">$260</span>
+                        <div class="tile {% if position == 26 %}active-tile{% endif %}" style="grid-column: 7; grid-row: 1;">
+                            <div class="color-bar" style="background-color: #ffff00;"></div> <span class="title">Atlantic Avenue</span><span class="price">$260</span>
+                            {% if position == 26 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 26 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 8; grid-row: 1; background-color: #eaf1e8;">
-                            <span class="non-prop-title">Water Corp</span><span class="price">$150</span>
+                        <div class="tile {% if position == 27 %}active-tile{% endif %}" style="grid-column: 8; grid-row: 1; background-color: #eaf1e8;">
+                            <span class="non-prop-title">Water Corporation</span><span class="price">$150</span>
+                            {% if position == 27 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 27 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 9; grid-row: 1;">
-                            <div class="color-bar" style="background-color: #ffff00;"></div> <span class="title">City Beach</span><span class="price">$260</span>
+                        <div class="tile {% if position == 28 %}active-tile{% endif %}" style="grid-column: 9; grid-row: 1;">
+                            <div class="color-bar" style="background-color: #ffff00;"></div> <span class="title">Ventnor Avenue</span><span class="price">$260</span>
+                            {% if position == 28 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 28 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 10; grid-row: 1;">
-                            <div class="color-bar" style="background-color: #ffff00;"></div> <span class="title">Cottesloe Beach</span><span class="price">$280</span>
+                        <div class="tile {% if position == 29 %}active-tile{% endif %}" style="grid-column: 10; grid-row: 1;">
+                            <div class="color-bar" style="background-color: #ffff00;"></div> <span class="title">Marvin Gardens</span><span class="price">$280</span>
+                            {% if position == 29 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 29 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
 
-                        <div class="tile" style="grid-column: 11; grid-row: 2;">
-                            <div class="color-bar" style="background-color: #008000;"></div> <span class="title">Northbridge</span><span class="price">$300</span>
+                        <div class="tile {% if position == 31 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 2;">
+                            <div class="color-bar" style="background-color: #008000;"></div> <span class="title">Pacific Avenue</span><span class="price">$300</span>
+                            {% if position == 31 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 31 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 11; grid-row: 3;">
-                            <div class="color-bar" style="background-color: #008000;"></div> <span class="title">Leederville</span><span class="price">$300</span>
+                        <div class="tile {% if position == 32 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 3;">
+                            <div class="color-bar" style="background-color: #008000;"></div> <span class="title">North Carolina Avenue</span><span class="price">$300</span>
+                            {% if position == 32 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 32 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 11; grid-row: 4; background-color: #eaf1e8;">
+                        <div class="tile {% if position == 33 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 4; background-color: #eaf1e8;">
                             <span class="non-prop-title text-info">Community<br>Chest</span>
+                            {% if position == 33 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 33 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 11; grid-row: 5;">
-                            <div class="color-bar" style="background-color: #008000;"></div> <span class="title">Subiaco</span><span class="price">$320</span>
+                        <div class="tile {% if position == 34 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 5;">
+                            <div class="color-bar" style="background-color: #008000;"></div> <span class="title">Pennsylvania Avenue</span><span class="price">$320</span>
+                            {% if position == 34 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 34 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 11; grid-row: 6;">
-                            <span class="non-prop-title">Joondalup Station</span><span class="price">$200</span>
+                        <div class="tile {% if position == 35 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 6;">
+                            <span class="non-prop-title">Short Line</span><span class="price">$200</span>
+                            {% if position == 35 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 35 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 11; grid-row: 7; background-color: #eaf1e8;">
+                        <div class="tile {% if position == 36 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 7; background-color: #eaf1e8;">
                             <span class="non-prop-title text-warning">Chance</span>
+                            {% if position == 36 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 36 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 11; grid-row: 8;">
-                            <div class="color-bar" style="background-color: #0000ff;"></div> <span class="title">Crown Perth</span><span class="price">$350</span>
+                        <div class="tile {% if position == 37 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 8;">
+                            <div class="color-bar" style="background-color: #0000ff;"></div> <span class="title">Park Place</span><span class="price">$350</span>
+                            {% if position == 37 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 37 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 11; grid-row: 9; background-color: #eaf1e8;">
+                        <div class="tile {% if position == 38 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 9; background-color: #eaf1e8;">
                             <span class="non-prop-title">Luxury Tax</span><span class="price text-danger">Pay $100</span>
+                            {% if position == 38 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 38 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
-                        <div class="tile" style="grid-column: 11; grid-row: 10;">
-                            <div class="color-bar" style="background-color: #0000ff;"></div> <span class="title">St Georges Tce</span><span class="price">$400</span>
+                        <div class="tile {% if position == 39 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 10;">
+                            <div class="color-bar" style="background-color: #0000ff;"></div> <span class="title">Boardwalk</span><span class="price">$400</span>
+                            {% if position == 39 %}
+                                <div class="player-token">🧍</div>
+                            {% endif %}
+                            {% if ai_position == 39 %}
+                                <div class="ai-token">🤖</div>
+                            {% endif %}
                         </div>
 
                         <div class="center-space">
@@ -161,7 +401,11 @@
                                     <strong class="text-info">COMMUNITY<br>CHEST</strong>
                                 </div>
                             </div>                          
-                            <a href="/roll" class="btn btn-danger btn-lg mt-5 fw-bold shadow">🎲 Roll Dice</a>
+                            <form action="/roll" method="post" class="mt-5">
+                                <button type="submit" class="btn btn-danger btn-lg fw-bold shadow">
+                                    🎲 Roll Dice
+                                </button>
+                            </form>
                             {% if dice_result %}
                                 <h4 class="mt-4 text-success">You rolled a {{ dice_result }}!</h4>
                             {% endif %}

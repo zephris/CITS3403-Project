@@ -74,7 +74,7 @@ def format_event(event):
         return f"{name} landed on their own property: {event.get('tile')}."
 
     if event_type == "auction":
-        return f"{name} landed on {event.get('tile')} and started an auction."
+        return ""
 
     if event_type == "no_action":
         return f"{name} landed on {event.get('tile')}."
@@ -84,6 +84,24 @@ def format_event(event):
 
     if event_type == "go_to_jail_double":
         return f"{name} rolled doubles three times and went to jail."
+
+    if event_type == "jail_roll_failed":
+        return f"{name} failed to roll doubles and remains in jail."
+
+    if event_type == "jail_roll_doubles":
+        return f"{name} rolled doubles and got out of jail."
+
+    if event_type == "jail_release":
+        return f"{name} was released from jail and continued their turn."
+
+    if event_type == "jail_forced_release":
+        return f"{name} paid ${event.get('fine')} and was released from jail."
+
+    if event_type == "jail_used_card":
+        return f"{name} used a Get Out of Jail Free card."
+
+    if event_type == "card_none":
+        return f"{name} landed on a card space, but no card was available."
 
     return f"{name}: {event_type}"
 
@@ -123,6 +141,7 @@ def render_game_page(dice_result=None):
         owner = format_player_name(owner_id) if owner_id else None
 
     ai_player = game_state.players["ai_1"]
+    ai_position = ai_player.pos
 
     return render_template(
         "index.html",
@@ -130,6 +149,7 @@ def render_game_page(dice_result=None):
         location=tile.name,
         money=player.cash,
         ai_money=ai_player.cash,
+        ai_position=ai_position,
         dice_result=dice_result,
         game_log=game_log,
         can_buy=can_buy,
@@ -146,7 +166,7 @@ def home():
     return render_game_page()
 
 
-@app.route("/roll")
+@app.route("/roll", methods=["POST"])
 def roll_dice():
     global last_roll, can_buy
 
@@ -157,30 +177,42 @@ def roll_dice():
 
     # Let AI turns finish first
     while game_state.turn_order[game_state.current_turn_index] != "player1":
+        acting_player_id = game_state.turn_order[game_state.current_turn_index]
         ai_event = engine.take_turn(game_state, decision_provider)
+
+        if "player_id" not in ai_event:
+            ai_event["player_id"] = acting_player_id
+
         text = format_event(ai_event)
 
-        if "landed on GO" not in text:
+        if text and "landed on GO" not in text:
             game_log.append(text)
 
-        check_game_over()
+            check_game_over()
 
-        if game_over:
-            return redirect(url_for("home"))
+            if game_over:
+                return redirect(url_for("home"))
 
     old_position = get_player().pos
 
+    acting_player_id = game_state.turn_order[game_state.current_turn_index]
     event = engine.take_turn(game_state, decision_provider)
+
+    if "player_id" not in event:
+        event["player_id"] = acting_player_id
 
     new_position = get_player().pos
     last_roll = (new_position - old_position) % len(config.tiles)
 
-    game_log.append(format_event(event))
+    text = format_event(event)
+
+    if text:
+        game_log.append(text)
 
     update_buy_status()
     check_game_over()
 
-    return render_game_page(dice_result=last_roll)
+    return redirect(url_for("home"))
 
 
 @app.route("/buy")
