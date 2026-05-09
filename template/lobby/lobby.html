@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monopoly Web - Perth Edition</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body { background-color: #f4f4f9; }
+        
+        /* Monopoly Board Grid System */
+        .monopoly-board {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            grid-template-rows: repeat(11, 1fr);
+            gap: 2px;
+            background-color: #333;
+            border: 2px solid #333;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+        }
+
+        /* Base Tile Style */
+        .tile {
+            background-color: #cce3c6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            text-align: center;
+            padding: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Property Color Headers */
+        .color-bar {
+            width: 100%;
+            height: 22%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-bottom: 1px solid #333;
+        }
+
+        /* Center Area */
+        .center-space {
+            grid-column: 2 / 11;
+            grid-row: 2 / 11;
+            background-color: #eaf1e8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Corner Tiles */
+        .corner { background-color: #eaf1e8; font-weight: bold; font-size: 0.8rem;}
+        
+        .price { font-weight: bold; margin-top: auto; }
+        .title { margin-top: 25px; font-weight: 600; line-height: 1.1;}
+        .non-prop-title { margin-top: auto; margin-bottom: auto; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <span class="navbar-brand mb-0 h1">🎲 Monopoly: Perth Edition</span>
+        <button class="btn btn-outline-light btn-sm">Leave Room</button>
+    </div>
+</nav>
+
+<div class="container-fluid px-4">
+    <div class="row">
+        
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="monopoly-board">
+                        
+                        <div class="tile corner" style="grid-column: 11; grid-row: 11;">
+                            <span class="fs-4 text-danger">GO</span><br>Collect $200
+                        </div>
+                        <div class="tile corner" style="grid-column: 1; grid-row: 11;">
+                            IN<br><span class="fs-4">JAIL</span>
+                        </div>
+                        <div class="tile corner" style="grid-column: 1; grid-row: 1;">
+                            FREE<br><span class="fs-5">PARKING</span>
+                        </div>
+                        <div class="tile corner" style="grid-column: 11; grid-row: 1;">
+                            GO TO<br><span class="fs-4">JAIL</span>
+                        </div>
+
+                        <div class="tile" style="grid-column: 10; grid-row: 11;">
+                            <div class="color-bar" style="background-color: #8b4513;"></div> <span class="title">Hay Street</span><span class="price">$60</span>
+                        </div>
+                        <div class="tile" style="grid-column: 9; grid-row: 11; background-color: #eaf1e8;">
+                            <span class="non-prop-title text-info">Community<br>Chest</span>
+                        </div>
+                        <div class="tile" style="grid-column: 8; grid-row: 11;">
+                            <div class="color-bar" style="background-color: #8b4513;"></div> <span class="title">Murray St</span><span class="price">$60</span>
+                        </div>
+                        <div class="tile" style="grid-column: 7; grid-row: 11; background-color: #eaf1e8;">
+                            <span class="non-prop-title">Income Tax</span><span class="price text-danger">Pay $200</span>
+                        </div>
+                        <div class="tile" style="grid-column: 6; grid-row: 11;">
+                            <span class="non-prop-title">Perth Station</span><span class="price">$200</span>
+                        </div>
+                        <div class="tile" style="grid-column: 5; grid-row: 11;">
+                            <div class="color-bar" style="background-color: #87ceeb;"></div> <span class="title">Barrack St</span><span class="price">$100</span>
+                        </div>
+                        <div class="tile" style="grid-column: 4; grid-row: 11; background-color: #eaf1e8;">
+                            <span class="non-prop-title text-warning">Chance</span>
+                        </div>
+                        <div class="tile" style="grid-column: 3; grid-row: 11;">
+                            <div class="color-bar" style="background-color: #87ceeb;"></div> <span class="title">Wellington St</span><span class="price">$100</span>
+                        </div>
+                        <div class="tile" style="grid-column: 2; grid-row: 11;">
+                            <div class="color-bar" style="background-color: #87ceeb;"></div> <span class="title">William St</span><span class="price">$120</span>
+                        </div>
+
+                        <div class="tile" style="grid-column: 1; grid-row: 10;">
+                            <div class="color-bar" style="background-color: #ff0080;"></div> <span class="title">Elizabeth Quay</span><span class="price">$140</span>
+                        </div>
+                        <div class="tile" style="grid-column: 1; grid-row: 9; background-color: #eaf1e8;">
+                            <span class="non-prop-title">Synergy<br>(Electric)</span><span class="price">$150</span>
+                        </div>
+                        <div class="tile" style="grid-column: 1; grid-row: 8;">
+                            <div class="color-bar" style="background-color: #ff0080;"></div> <span class="title">Bell Tower</span><span class="price">$140</span>
+                        </div>
+                        <div class="tile" style="grid-column: 1; grid-row: 7;">
+                            <div class="color-bar" style="background-color: #ff0080;"></div> <span class="title">Swan River</span><span class="price">$160</span>
+                        </div>
+                        <div class="tile" style="grid-column: 1; grid-row: 6;">
+                            <span class="non-prop-title">Fremantle Station</span><span class="price">$200</span>
+                        </div>
+                        <div class="tile" style="grid-column: 1; grid-row: 5;">
+                            <div class="color-bar" style="background-color: #ffa500;"></div> <span class="title">Fremantle Prison</span><span class="price">$180</span>
+                        </div>
+                        <div class="tile" style="grid-column: 1; grid-row: 4; background-color: #eaf1e8;">
+                            <span class="non-prop-title text-info">Community<br>Chest</span>
+                        </div>
+                        <div class="tile" style="grid-column: 1; grid-row: 3;">
+                            <div class="color-bar" style="background-color: #ffa500;"></div> <span class="title">Fremantle Markets</span><span class="price">$180</span>
+                        </div>
+                        <div class="tile" style="grid-column: 1; grid-row: 2;">
+                            <div class="color-bar" style="background-color: #ffa500;"></div> <span class="title">Cappuccino Strip</span><span class="price">$200</span>
+                        </div>
+
+                        <div class="tile" style="grid-column: 2; grid-row: 1;">
+                            <div class="color-bar" style="background-color: #ff0000;"></div> <span class="title">Kings Park</span><span class="price">$220</span>
+                        </div>
+                        <div class="tile" style="grid-column: 3; grid-row: 1; background-color: #eaf1e8;">
+                            <span class="non-prop-title text-warning">Chance</span>
+                        </div>
+                        <div class="tile" style="grid-column: 4; grid-row: 1;">
+                            <div class="color-bar" style="background-color: #ff0000;"></div> <span class="title">Botanic Garden</span><span class="price">$220</span>
+                        </div>
+                        <div class="tile" style="grid-column: 5; grid-row: 1;">
+                            <div class="color-bar" style="background-color: #ff0000;"></div> <span class="title">War Memorial</span><span class="price">$240</span>
+                        </div>
+                        <div class="tile" style="grid-column: 6; grid-row: 1;">
+                            <span class="non-prop-title">Midland Station</span><span class="price">$200</span>
+                        </div>
+                        <div class="tile" style="grid-column: 7; grid-row: 1;">
+                            <div class="color-bar" style="background-color: #ffff00;"></div> <span class="title">Scarborough Beach</span><span class="price">$260</span>
+                        </div>
+                        <div class="tile" style="grid-column: 8; grid-row: 1; background-color: #eaf1e8;">
+                            <span class="non-prop-title">Water Corp</span><span class="price">$150</span>
+                        </div>
+                        <div class="tile" style="grid-column: 9; grid-row: 1;">
+                            <div class="color-bar" style="background-color: #ffff00;"></div> <span class="title">City Beach</span><span class="price">$260</span>
+                        </div>
+                        <div class="tile" style="grid-column: 10; grid-row: 1;">
+                            <div class="color-bar" style="background-color: #ffff00;"></div> <span class="title">Cottesloe Beach</span><span class="price">$280</span>
+                        </div>
+
+                        <div class="tile" style="grid-column: 11; grid-row: 2;">
+                            <div class="color-bar" style="background-color: #008000;"></div> <span class="title">Northbridge</span><span class="price">$300</span>
+                        </div>
+                        <div class="tile" style="grid-column: 11; grid-row: 3;">
+                            <div class="color-bar" style="background-color: #008000;"></div> <span class="title">Leederville</span><span class="price">$300</span>
+                        </div>
+                        <div class="tile" style="grid-column: 11; grid-row: 4; background-color: #eaf1e8;">
+                            <span class="non-prop-title text-info">Community<br>Chest</span>
+                        </div>
+                        <div class="tile" style="grid-column: 11; grid-row: 5;">
+                            <div class="color-bar" style="background-color: #008000;"></div> <span class="title">Subiaco</span><span class="price">$320</span>
+                        </div>
+                        <div class="tile" style="grid-column: 11; grid-row: 6;">
+                            <span class="non-prop-title">Joondalup Station</span><span class="price">$200</span>
+                        </div>
+                        <div class="tile" style="grid-column: 11; grid-row: 7; background-color: #eaf1e8;">
+                            <span class="non-prop-title text-warning">Chance</span>
+                        </div>
+                        <div class="tile" style="grid-column: 11; grid-row: 8;">
+                            <div class="color-bar" style="background-color: #0000ff;"></div> <span class="title">Crown Perth</span><span class="price">$350</span>
+                        </div>
+                        <div class="tile" style="grid-column: 11; grid-row: 9; background-color: #eaf1e8;">
+                            <span class="non-prop-title">Luxury Tax</span><span class="price text-danger">Pay $100</span>
+                        </div>
+                        <div class="tile" style="grid-column: 11; grid-row: 10;">
+                            <div class="color-bar" style="background-color: #0000ff;"></div> <span class="title">St Georges Tce</span><span class="price">$400</span>
+                        </div>
+
+                        <div class="center-space">
+                            <h2 class="text-uppercase fw-bold mb-4" style="letter-spacing: 5px; color: #d32f2f;">Monopoly</h2>
+                            <h4 class="text-muted mb-4">Perth Edition</h4>
+                            
+                            <div class="d-flex gap-4">
+                                <div class="card p-3 text-center border-warning bg-light shadow-sm" style="width: 150px; height: 80px;">
+                                    <strong class="text-warning">CHANCE</strong>
+                                </div>
+                                <div class="card p-3 text-center border-info bg-light shadow-sm" style="width: 150px; height: 80px;">
+                                    <strong class="text-info">COMMUNITY<br>CHEST</strong>
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-danger btn-lg mt-5 fw-bold shadow">🎲 Roll Dice</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white fw-bold">
+                    🏆 Leaderboard
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                        <span>👤 Player 1 (You)</span>
+                        <span class="badge bg-success rounded-pill">$ 1,500</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>🤖 Player 2</span>
+                        <span class="badge bg-secondary rounded-pill">$ 1,200</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white fw-bold">
+                    📜 Game Log
+                </div>
+                <div class="card-body" style="height: 250px; overflow-y: auto; background-color: #f8f9fa;">
+                    <p class="mb-1 text-muted"><small>System: The game has started!</small></p>
+                    <p class="mb-1"><small><strong>Player 1</strong> rolled a 6.</small></p>
+                    <p class="mb-1"><small><strong>Player 1</strong> landed on Murray St.</small></p>
+                    <p class="mb-1"><small><strong>Player 1</strong> purchased Murray St for $60.</small></p>
+                    <p class="mb-1"><small><strong>Player 2</strong> rolled a 3.</small></p>
+                </div>
+                <div class="card-footer">
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" placeholder="Type a message...">
+                        <button class="btn btn-outline-secondary" type="button">Send</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

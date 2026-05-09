@@ -1,0 +1,30 @@
+html {
+    height: 100%;
+    margin: 5px;
+    padding: 0;
+}
+
+[data-bs-theme="dark"] {
+    --bs-primary: #000000;
+    --bs-primary-bg-subtle: #000000;
+    --bs-primary-bg-subtle-dark: #000000;
+}
+
+[data-bs-theme="dark"] .btn-primary {
+    --bs-btn-bg: #000000;
+}
+
+body {
+    background-color: #eaf1e8;
+}
+
+.header-box {
+    background-color: #ffffff;
+    border: 2px solid #f5f3ea;
+    border-radius: 16px;
+    color: #000000;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+}
+

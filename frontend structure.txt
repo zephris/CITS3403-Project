@@ -1,0 +1,20 @@
+home
+|
+-->make lobby 
+|
+-->lobby browser	   
+|
+-->personal stats and leaderboard
+|
+--> settings	   
+|
+--> credit
+
+actual game itself as well
+
+
+lobby: sign in/sign up, online friends, messaging, add/look up friends
+
+framework: tailwind? (can pass on reactivity for now, game should be pc-focused. JS/AJAX functionalities essential)
+
+can start mocking up home and login etc.
