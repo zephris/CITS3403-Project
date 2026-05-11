@@ -193,22 +193,7 @@ class GameEngine:
                 return jail_event
 
         if jail_roll_total is None:
-            d1, d2 = self.roll_dice(), self.roll_dice()
-            double_jail = 0
-            move = 0
-            while d1 == d2 and double_jail != 3:
-                double_jail += 1
-                move += d1 + d2
-                d1, d2 = self.roll_dice(), self.roll_dice()
-            if double_jail == 3:
-                # teleport player to jail tile
-                player.pos = self._find_tile_index("Jail")
-                player.in_jail_turns = 1
-                event = {"type": "go_to_jail_double", "player_id": player_id}
-                self._check_bankruptcy(state, player_id)
-                self._check_winner(state)
-                self._advance_turn(state)
-                return event
+            move = self.roll_dice()
         else:
             move = jail_roll_total
         
