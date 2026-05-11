@@ -60,8 +60,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-
-                        <div class="tile {% if position == 1 %}active-tile{% endif %}" style="grid-column: 10; grid-row: 11;">
+                            <div class="tile 
+                                {% if position == 1 %}active-tile{% endif %}
+                                {% if property_owners.get(1) == 'player1' %}owned-player{% endif %}
+                                {% if property_owners.get(1) == 'ai_1' %}owned-ai{% endif %}
+                            " style="grid-column: 10; grid-row: 11;">
                             <div class="color-bar" style="background-color: #8b4513;"></div> <span class="title">Mediterranean Avenue</span><span class="price">$60</span>
                             {% if position == 1 %}
                                 <div class="player-token">🧍</div>
@@ -79,7 +82,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 3 %}active-tile{% endif %}" style="grid-column: 8; grid-row: 11;">
+                        <div class="tile 
+                            {% if position == 3 %}active-tile{% endif %}
+                            {% if property_owners.get(3) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(3) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 8; grid-row: 11;">
                             <div class="color-bar" style="background-color: #8b4513;"></div> <span class="title">Baltic Avenue</span><span class="price">$60</span>
                             {% if position == 3 %}
                                 <div class="player-token">🧍</div>
@@ -97,7 +104,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 5 %}active-tile{% endif %}" style="grid-column: 6; grid-row: 11;">
+                        <div class="tile 
+                            {% if position == 5 %}active-tile{% endif %}
+                            {% if property_owners.get(5) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(5) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 6; grid-row: 11;">
                             <span class="non-prop-title">Transperth</span><span class="price">$200</span>
                             {% if position == 5 %}
                                 <div class="player-token">🧍</div>
@@ -106,7 +117,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 6 %}active-tile{% endif %}" style="grid-column: 5; grid-row: 11;">
+                        <div class="tile 
+                            {% if position == 6 %}active-tile{% endif %}
+                            {% if property_owners.get(6) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(6) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 5; grid-row: 11;">
                             <div class="color-bar" style="background-color: #87ceeb;"></div> <span class="title">Oriental Avenue</span><span class="price">$100</span>
                             {% if position == 6 %}
                                 <div class="player-token">🧍</div>
@@ -124,7 +139,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 8 %}active-tile{% endif %}" style="grid-column: 3; grid-row: 11;">
+                        <div class="tile 
+                            {% if position == 8 %}active-tile{% endif %}
+                            {% if property_owners.get(8) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(8) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 3; grid-row: 11;">
                             <div class="color-bar" style="background-color: #87ceeb;"></div> <span class="title">Vermont Avenue</span><span class="price">$100</span>
                             {% if position == 8 %}
                                 <div class="player-token">🧍</div>
@@ -133,7 +152,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 9 %}active-tile{% endif %}" style="grid-column: 2; grid-row: 11;">
+                        <div class="tile 
+                            {% if position == 9 %}active-tile{% endif %}
+                            {% if property_owners.get(9) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(9) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 2; grid-row: 11;">
                             <div class="color-bar" style="background-color: #87ceeb;"></div> <span class="title">Connecticut Avenue</span><span class="price">$120</span>
                             {% if position == 9 %}
                                 <div class="player-token">🧍</div>
@@ -143,7 +166,11 @@
                             {% endif %}
                         </div>
 
-                        <div class="tile {% if position == 11 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 10;">
+                        <div class="tile 
+                            {% if position == 11 %}active-tile{% endif %}
+                            {% if property_owners.get(11) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(11) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 1; grid-row: 10;">
                             <div class="color-bar" style="background-color: #ff0080;"></div> <span class="title">St. Charles Place</span><span class="price">$140</span>
                             {% if position == 11 %}
                                 <div class="player-token">🧍</div>
@@ -152,7 +179,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 12 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 9; background-color: #eaf1e8;">
+                        <div class="tile 
+                            {% if position == 12 %}active-tile{% endif %}
+                            {% if property_owners.get(12) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(12) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 1; grid-row: 9; background-color: #eaf1e8;">
                             <span class="non-prop-title">Western Power</span><span class="price">$150</span>
                             {% if position == 12 %}
                                 <div class="player-token">🧍</div>
@@ -161,7 +192,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 13 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 8;">
+                        <div class="tile 
+                            {% if position == 13 %}active-tile{% endif %}
+                            {% if property_owners.get(13) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(13) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 1; grid-row: 8;">
                             <div class="color-bar" style="background-color: #ff0080;"></div> <span class="title">States Avenue</span><span class="price">$140</span>
                             {% if position == 13 %}
                                 <div class="player-token">🧍</div>
@@ -170,7 +205,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 14 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 7;">
+                        <div class="tile 
+                            {% if position == 14 %}active-tile{% endif %}
+                            {% if property_owners.get(14) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(14) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 1; grid-row: 7;">
                             <div class="color-bar" style="background-color: #ff0080;"></div> <span class="title">Virginia Avenue</span><span class="price">$160</span>
                             {% if position == 14 %}
                                 <div class="player-token">🧍</div>
@@ -179,7 +218,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 15 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 6;">
+                        <div class="tile 
+                            {% if position == 15 %}active-tile{% endif %}
+                            {% if property_owners.get(15) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(15) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 1; grid-row: 6;">
                             <span class="non-prop-title">Australian Rail Track<br>Corporation</span><span class="price">$200</span>
                             {% if position == 15 %}
                                 <div class="player-token">🧍</div>
@@ -188,7 +231,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 16 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 5;">
+                        <div class="tile 
+                            {% if position == 16 %}active-tile{% endif %}
+                            {% if property_owners.get(16) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(16) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 1; grid-row: 5;">
                             <div class="color-bar" style="background-color: #ffa500;"></div> <span class="title">St. James Place</span><span class="price">$180</span>
                             {% if position == 16 %}
                                 <div class="player-token">🧍</div>
@@ -206,7 +253,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 18 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 3;">
+                        <div class="tile 
+                            {% if position == 18 %}active-tile{% endif %}
+                            {% if property_owners.get(18) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(18) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 1; grid-row: 3;">
                             <div class="color-bar" style="background-color: #ffa500;"></div> <span class="title">Tennessee Avenue</span><span class="price">$180</span>
                             {% if position == 18 %}
                                 <div class="player-token">🧍</div>
@@ -215,7 +266,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 19 %}active-tile{% endif %}" style="grid-column: 1; grid-row: 2;">
+                        <div class="tile 
+                            {% if position == 19 %}active-tile{% endif %}
+                            {% if property_owners.get(19) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(19) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 1; grid-row: 2;">
                             <div class="color-bar" style="background-color: #ffa500;"></div> <span class="title">New York Avenue</span><span class="price">$200</span>
                             {% if position == 19 %}
                                 <div class="player-token">🧍</div>
@@ -225,7 +280,11 @@
                             {% endif %}
                         </div>
 
-                        <div class="tile {% if position == 21 %}active-tile{% endif %}" style="grid-column: 2; grid-row: 1;">
+                        <div class="tile 
+                            {% if position == 21 %}active-tile{% endif %}
+                            {% if property_owners.get(21) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(21) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 2; grid-row: 1;">
                             <div class="color-bar" style="background-color: #ff0000;"></div> <span class="title">Kentucky Avenue</span><span class="price">$220</span>
                             {% if position == 21 %}
                                 <div class="player-token">🧍</div>
@@ -243,7 +302,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 23 %}active-tile{% endif %}" style="grid-column: 4; grid-row: 1;">
+                        <div class="tile 
+                            {% if position == 23 %}active-tile{% endif %}
+                            {% if property_owners.get(23) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(23) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 4; grid-row: 1;">
                             <div class="color-bar" style="background-color: #ff0000;"></div> <span class="title">Indiana Avenue</span><span class="price">$220</span>
                             {% if position == 23 %}
                                 <div class="player-token">🧍</div>
@@ -252,7 +315,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 24 %}active-tile{% endif %}" style="grid-column: 5; grid-row: 1;">
+                        <div class="tile 
+                            {% if position == 24 %}active-tile{% endif %}
+                            {% if property_owners.get(24) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(24) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 5; grid-row: 1;">
                             <div class="color-bar" style="background-color: #ff0000;"></div> <span class="title">Illinois Avenue</span><span class="price">$240</span>
                             {% if position == 24 %}
                                 <div class="player-token">🧍</div>
@@ -261,7 +328,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 25 %}active-tile{% endif %}" style="grid-column: 6; grid-row: 1;">
+                        <div class="tile 
+                            {% if position == 25 %}active-tile{% endif %}
+                            {% if property_owners.get(25) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(25) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 6; grid-row: 1;">
                             <span class="non-prop-title">Aurizon</span><span class="price">$200</span>
                             {% if position == 25 %}
                                 <div class="player-token">🧍</div>
@@ -270,7 +341,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 26 %}active-tile{% endif %}" style="grid-column: 7; grid-row: 1;">
+                        <div class="tile 
+                            {% if position == 26 %}active-tile{% endif %}
+                            {% if property_owners.get(26) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(26) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 7; grid-row: 1;">
                             <div class="color-bar" style="background-color: #ffff00;"></div> <span class="title">Atlantic Avenue</span><span class="price">$260</span>
                             {% if position == 26 %}
                                 <div class="player-token">🧍</div>
@@ -279,7 +354,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 27 %}active-tile{% endif %}" style="grid-column: 8; grid-row: 1; background-color: #eaf1e8;">
+                        <div class="tile 
+                            {% if position == 27 %}active-tile{% endif %}
+                            {% if property_owners.get(27) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(27) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 8; grid-row: 1; background-color: #eaf1e8;">
                             <span class="non-prop-title">Water Corporation</span><span class="price">$150</span>
                             {% if position == 27 %}
                                 <div class="player-token">🧍</div>
@@ -288,7 +367,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 28 %}active-tile{% endif %}" style="grid-column: 9; grid-row: 1;">
+                        <div class="tile 
+                            {% if position == 28 %}active-tile{% endif %}
+                            {% if property_owners.get(28) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(28) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 9; grid-row: 1;">
                             <div class="color-bar" style="background-color: #ffff00;"></div> <span class="title">Ventnor Avenue</span><span class="price">$260</span>
                             {% if position == 28 %}
                                 <div class="player-token">🧍</div>
@@ -297,7 +380,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 29 %}active-tile{% endif %}" style="grid-column: 10; grid-row: 1;">
+                        <div class="tile 
+                            {% if position == 29 %}active-tile{% endif %}
+                            {% if property_owners.get(29) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(29) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 10; grid-row: 1;">
                             <div class="color-bar" style="background-color: #ffff00;"></div> <span class="title">Marvin Gardens</span><span class="price">$280</span>
                             {% if position == 29 %}
                                 <div class="player-token">🧍</div>
@@ -307,7 +394,11 @@
                             {% endif %}
                         </div>
 
-                        <div class="tile {% if position == 31 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 2;">
+                        <div class="tile 
+                            {% if position == 31 %}active-tile{% endif %}
+                            {% if property_owners.get(31) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(31) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 11; grid-row: 2;">
                             <div class="color-bar" style="background-color: #008000;"></div> <span class="title">Pacific Avenue</span><span class="price">$300</span>
                             {% if position == 31 %}
                                 <div class="player-token">🧍</div>
@@ -316,7 +407,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 32 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 3;">
+                        <div class="tile 
+                            {% if position == 32 %}active-tile{% endif %}
+                            {% if property_owners.get(32) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(32) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 11; grid-row: 3;">
                             <div class="color-bar" style="background-color: #008000;"></div> <span class="title">North Carolina Avenue</span><span class="price">$300</span>
                             {% if position == 32 %}
                                 <div class="player-token">🧍</div>
@@ -334,7 +429,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 34 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 5;">
+                        <div class="tile 
+                            {% if position == 34 %}active-tile{% endif %}
+                            {% if property_owners.get(34) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(34) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 11; grid-row: 5;">
                             <div class="color-bar" style="background-color: #008000;"></div> <span class="title">Pennsylvania Avenue</span><span class="price">$320</span>
                             {% if position == 34 %}
                                 <div class="player-token">🧍</div>
@@ -343,7 +442,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 35 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 6;">
+                        <div class="tile 
+                            {% if position == 35 %}active-tile{% endif %}
+                            {% if property_owners.get(35) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(35) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 11; grid-row: 6;">
                             <span class="non-prop-title">Short Line</span><span class="price">$200</span>
                             {% if position == 35 %}
                                 <div class="player-token">🧍</div>
@@ -361,7 +464,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 37 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 8;">
+                        <div class="tile 
+                            {% if position == 37 %}active-tile{% endif %}
+                            {% if property_owners.get(37) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(37) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 11; grid-row: 8;">
                             <div class="color-bar" style="background-color: #0000ff;"></div> <span class="title">Park Place</span><span class="price">$350</span>
                             {% if position == 37 %}
                                 <div class="player-token">🧍</div>
@@ -379,7 +486,11 @@
                                 <div class="ai-token">🤖</div>
                             {% endif %}
                         </div>
-                        <div class="tile {% if position == 39 %}active-tile{% endif %}" style="grid-column: 11; grid-row: 10;">
+                        <div class="tile 
+                            {% if position == 39 %}active-tile{% endif %}
+                            {% if property_owners.get(39) == 'player1' %}owned-player{% endif %}
+                            {% if property_owners.get(39) == 'ai_1' %}owned-ai{% endif %}
+                        " style="grid-column: 11; grid-row: 10;">
                             <div class="color-bar" style="background-color: #0000ff;"></div> <span class="title">Boardwalk</span><span class="price">$400</span>
                             {% if position == 39 %}
                                 <div class="player-token">🧍</div>
@@ -401,11 +512,26 @@
                                     <strong class="text-info">COMMUNITY<br>CHEST</strong>
                                 </div>
                             </div>                          
-                            <form action="/roll" method="post" class="mt-5">
-                                <button type="submit" class="btn btn-danger btn-lg fw-bold shadow">
-                                    🎲 Roll Dice
-                                </button>
-                            </form>
+                            {% if not game_over %}
+                                {% if current_turn == "Player 1" and not game_over %}
+                                    <form action="/roll" method="post" class="mt-5">
+                                        <button type="submit" class="btn btn-danger btn-lg fw-bold shadow">
+                                            🎲 Roll Dice
+                                        </button>
+                                    </form>
+                                {% elif not game_over %}
+                                    <div class="mt-5 text-muted">
+                                        🤖 AI Player is taking a turn...
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="alert alert-success mt-5">
+                                    Game Over! Winner: {{ winner }}
+                                </div>
+                            {% endif %}
+                            <p class="mt-3">
+                                <strong>Current Turn:</strong> {{ current_turn }}
+                            </p>
                             {% if dice_result %}
                                 <h4 class="mt-4 text-success">You rolled a {{ dice_result }}!</h4>
                             {% endif %}
@@ -491,6 +617,16 @@
         </div>
     </div>
 </div>
-
+{% if current_turn != "Player 1" and not game_over %}
+<script>
+    setTimeout(function () {
+        const form = document.createElement("form");
+        form.method = "post";
+        form.action = "/roll";
+        document.body.appendChild(form);
+        form.submit();
+    }, 1000);
+</script>
+{% endif %}
 </body>
 </html>

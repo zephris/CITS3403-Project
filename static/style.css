@@ -51,6 +51,14 @@ body { background-color: #f4f4f9; }
             justify-content: center;
         }
 
+        .owned-player {
+            border: 4px solid #d32f2f;
+        }
+
+        .owned-ai {
+            border: 4px solid #1976d2;
+        }
+
         .player-token {
             position: absolute;
             bottom: 4px;

@@ -1,5 +1,6 @@
 from flask import Flask, render_template, redirect, url_for
 from template.backend.app.game_logic.engine import load_game_config, GameEngine
+import random
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key"
@@ -12,6 +13,10 @@ players = [
     {"player_id": "ai_1", "name": "AI Player"}
 ]
 
+# Temporary local ID for this prototype.
+# Later, replace this with the real game_id returned by POST /lobbies/{lobby_id}/start.
+game_id = "local_demo_game"
+
 game_state = engine.initialize_game(players)
 game_log = ["Game started! Player 1 is on GO."]
 last_roll = None
@@ -21,6 +26,9 @@ game_over = False
 
 def decision_provider(player_id, action, context):
     if action == "buy_property":
+        if player_id.startswith("ai"):
+            return {"buy": random.choice([True, False])}
+
         return {"buy": False}
 
     if action == "auction_bid":
@@ -106,6 +114,52 @@ def format_event(event):
     return f"{name}: {event_type}"
 
 
+def record_event(event_type, amount=0, metadata=None):
+    """
+    Temporary local event recorder.
+    Later this can be connected to POST /stats/events.
+    """
+    if metadata is None:
+        metadata = {}
+
+    print({
+        "game_id": game_id,
+        "event_type": event_type,
+        "amount": amount,
+        "metadata": metadata
+    })
+
+
+def finalize_game():
+    """
+    Temporary local finalize function.
+    Later this can be connected to POST /stats/games/{game_id}/finalize.
+    """
+    player = game_state.players["player1"]
+    ai_player = game_state.players["ai_1"]
+
+    result = {
+        "game_id": game_id,
+        "winner_user_id": game_state.winner_id,
+        "player_results": [
+            {
+                "user_id": "player1",
+                "final_rank": 1 if game_state.winner_id == "player1" else 2,
+                "bankrupt_flag": getattr(player, "bankrupt", False),
+                "turns_taken": getattr(player, "turns_taken", 0)
+            },
+            {
+                "user_id": "ai_1",
+                "final_rank": 1 if game_state.winner_id == "ai_1" else 2,
+                "bankrupt_flag": getattr(ai_player, "bankrupt", False),
+                "turns_taken": getattr(ai_player, "turns_taken", 0)
+            }
+        ]
+    }
+
+    print(result)
+
+
 def update_buy_status():
     global can_buy
 
@@ -123,9 +177,10 @@ def update_buy_status():
 def check_game_over():
     global game_over
 
-    if game_state.winner_id:
+    if game_state.winner_id and not game_over:
         game_over = True
         game_log.append(f"Game over! Winner: {format_player_name(game_state.winner_id)}")
+        finalize_game()
 
 
 def render_game_page(dice_result=None):
@@ -143,6 +198,11 @@ def render_game_page(dice_result=None):
     ai_player = game_state.players["ai_1"]
     ai_position = ai_player.pos
 
+    property_owners = {}
+
+    for tile_index, property_state in game_state.properties.items():
+        property_owners[tile_index] = property_state.owner_id
+
     return render_template(
         "index.html",
         position=player.pos,
@@ -156,7 +216,12 @@ def render_game_page(dice_result=None):
         property_price=property_price,
         owner=owner,
         game_over=game_over,
-        winner=format_player_name(game_state.winner_id) if game_state.winner_id else None
+        winner=format_player_name(game_state.winner_id) if game_state.winner_id else None,
+        current_turn=format_player_name(
+            game_state.turn_order[game_state.current_turn_index]
+        ),
+        property_owners=property_owners,
+        game_id=game_id
     )
 
 
@@ -215,7 +280,7 @@ def roll_dice():
     return redirect(url_for("home"))
 
 
-@app.route("/buy")
+@app.route("/buy", methods=["POST"])
 def buy_property():
     global can_buy
 
@@ -232,6 +297,14 @@ def buy_property():
             player.cash -= tile.buy_price
             property_state.owner_id = "player1"
             game_log.append(f"Player 1 bought {tile.name} for ${tile.buy_price}.")
+            record_event(
+                "property_bought",
+                amount=tile.buy_price,
+                metadata={
+                    "player_id": "player1",
+                    "tile": tile.name
+                }
+            )
         else:
             game_log.append(f"Player 1 cannot buy {tile.name}.")
 
@@ -240,7 +313,7 @@ def buy_property():
     return redirect(url_for("home"))
 
 
-@app.route("/skip-buy")
+@app.route("/skip-buy", methods=["POST"])
 def skip_buy():
     global can_buy
 
