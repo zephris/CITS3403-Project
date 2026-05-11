@@ -22,6 +22,7 @@ game_log = ["Game started! Player 1 is on GO."]
 last_roll = None
 can_buy = False
 game_over = False
+waiting_for_ai = False
 
 
 def decision_provider(player_id, action, context):
@@ -183,6 +184,33 @@ def check_game_over():
         finalize_game()
 
 
+def play_ai_turns_until_player():
+    """
+    Let AI players take their turns until control returns to Player 1.
+    This avoids using JavaScript auto-refresh to repeatedly submit /roll.
+    """
+    safety_counter = 0
+
+    while (
+        not game_over
+        and game_state.turn_order[game_state.current_turn_index] != "player1"
+        and safety_counter < 20
+    ):
+        acting_player_id = game_state.turn_order[game_state.current_turn_index]
+        ai_event = engine.take_turn(game_state, decision_provider)
+
+        if "player_id" not in ai_event:
+            ai_event["player_id"] = acting_player_id
+
+        text = format_event(ai_event)
+
+        if text and "landed on GO" not in text:
+            game_log.append(text)
+
+        check_game_over()
+        safety_counter += 1
+
+
 def render_game_page(dice_result=None):
     player = get_player()
     tile = get_current_tile()
@@ -207,6 +235,7 @@ def render_game_page(dice_result=None):
         "index.html",
         position=player.pos,
         location=tile.name,
+        waiting_for_ai=waiting_for_ai,
         money=player.cash,
         ai_money=ai_player.cash,
         ai_position=ai_position,
@@ -233,30 +262,15 @@ def home():
 
 @app.route("/roll", methods=["POST"])
 def roll_dice():
-    global last_roll, can_buy
+    global last_roll, can_buy, waiting_for_ai
 
     if game_over:
         return redirect(url_for("home"))
 
+    if waiting_for_ai:
+        return redirect(url_for("home"))
+
     can_buy = False
-
-    # Let AI turns finish first
-    while game_state.turn_order[game_state.current_turn_index] != "player1":
-        acting_player_id = game_state.turn_order[game_state.current_turn_index]
-        ai_event = engine.take_turn(game_state, decision_provider)
-
-        if "player_id" not in ai_event:
-            ai_event["player_id"] = acting_player_id
-
-        text = format_event(ai_event)
-
-        if text and "landed on GO" not in text:
-            game_log.append(text)
-
-            check_game_over()
-
-            if game_over:
-                return redirect(url_for("home"))
 
     old_position = get_player().pos
 
@@ -277,12 +291,15 @@ def roll_dice():
     update_buy_status()
     check_game_over()
 
+    if not game_over and not can_buy:
+        waiting_for_ai = True
+
     return redirect(url_for("home"))
 
 
 @app.route("/buy", methods=["POST"])
 def buy_property():
-    global can_buy
+    global can_buy, waiting_for_ai
 
     if game_over:
         return redirect(url_for("home"))
@@ -309,30 +326,68 @@ def buy_property():
             game_log.append(f"Player 1 cannot buy {tile.name}.")
 
     can_buy = False
+    waiting_for_ai = True
+
+    play_ai_turns_until_player()
+    update_buy_status()
 
     return redirect(url_for("home"))
 
 
 @app.route("/skip-buy", methods=["POST"])
 def skip_buy():
-    global can_buy
+    global can_buy, waiting_for_ai
 
     tile = get_current_tile()
     game_log.append(f"Player 1 chose not to buy {tile.name}.")
     can_buy = False
+    waiting_for_ai = True
+
+    return redirect(url_for("home"))
+
+@app.route("/ai-turn", methods=["POST"])
+def ai_turn():
+    global waiting_for_ai, can_buy
+
+    if game_over:
+        return redirect(url_for("home"))
+
+    can_buy = False
+
+    while game_state.turn_order[game_state.current_turn_index] != "player1":
+        acting_player_id = game_state.turn_order[game_state.current_turn_index]
+        ai_event = engine.take_turn(game_state, decision_provider)
+
+        if "player_id" not in ai_event:
+            ai_event["player_id"] = acting_player_id
+
+        text = format_event(ai_event)
+
+        if text and "landed on GO" not in text:
+            game_log.append(text)
+
+        check_game_over()
+
+        if game_over:
+            waiting_for_ai = False
+            return redirect(url_for("home"))
+
+    waiting_for_ai = False
+    update_buy_status()
 
     return redirect(url_for("home"))
 
 
-@app.route("/reset")
+@app.route("/reset", methods=["POST"])
 def reset_game():
-    global game_state, game_log, last_roll, can_buy, game_over
+    global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai
 
     game_state = engine.initialize_game(players)
     game_log = ["Game reset! Player 1 is on GO."]
     last_roll = None
     can_buy = False
     game_over = False
+    waiting_for_ai = False
 
     return redirect(url_for("home"))
 

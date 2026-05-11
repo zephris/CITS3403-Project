@@ -513,16 +513,16 @@
                                 </div>
                             </div>                          
                             {% if not game_over %}
-                                {% if current_turn == "Player 1" and not game_over %}
+                                {% if waiting_for_ai %}
+                                    <div class="mt-5 text-muted">
+                                        🤖 AI Player is taking a turn...
+                                    </div>
+                                {% elif current_turn == "Player 1" %}
                                     <form action="/roll" method="post" class="mt-5">
                                         <button type="submit" class="btn btn-danger btn-lg fw-bold shadow">
                                             🎲 Roll Dice
                                         </button>
                                     </form>
-                                {% elif not game_over %}
-                                    <div class="mt-5 text-muted">
-                                        🤖 AI Player is taking a turn...
-                                    </div>
                                 {% endif %}
                             {% else %}
                                 <div class="alert alert-success mt-5">
@@ -555,21 +555,27 @@
                                 </div>
                             {% endif %}
                             
-                            {% if can_buy %}
-                                <div class="mt-2">
-                                    <a href="/buy" class="btn btn-success btn-sm">
-                                        Buy {{ location }} for ${{ property_price }}
-                                    </a>
+                            {% if can_buy and not waiting_for_ai %}
+                                <div class="mt-2 d-flex gap-2 justify-content-center">
+                                    <form action="{{ url_for('buy_property') }}" method="post">
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            Buy {{ location }} for ${{ property_price }}
+                                        </button>
+                                    </form>
 
-                                    <a href="/skip-buy" class="btn btn-outline-danger btn-sm">
-                                        Skip
-                                    </a>
+                                    <form action="{{ url_for('skip_buy') }}" method="post">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            Skip
+                                        </button>
+                                    </form>
                                 </div>
                             {% endif %}
 
-                            <a href="/reset" class="btn btn-outline-secondary btn-sm mt-2">
-                                Reset Game
-                            </a>
+                            <form action="{{ url_for('reset_game') }}" method="post" class="mt-2">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    Reset Game
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -617,12 +623,12 @@
         </div>
     </div>
 </div>
-{% if current_turn != "Player 1" and not game_over %}
+{% if waiting_for_ai and not game_over %}
 <script>
     setTimeout(function () {
         const form = document.createElement("form");
         form.method = "post";
-        form.action = "/roll";
+        form.action = "/ai-turn";
         document.body.appendChild(form);
         form.submit();
     }, 1000);
