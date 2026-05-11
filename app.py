@@ -256,6 +256,11 @@ def render_game_page(dice_result=None):
 
 @app.route("/")
 def home():
+    return redirect(url_for("lobby_page"))
+
+
+@app.route("/game/<game_id>")
+def game_page(game_id):
     update_buy_status()
     return render_game_page()
 
@@ -265,10 +270,10 @@ def roll_dice():
     global last_roll, can_buy, waiting_for_ai
 
     if game_over:
-        return redirect(url_for("home"))
+        return redirect(url_for("game_page", game_id=game_id))
 
     if waiting_for_ai:
-        return redirect(url_for("home"))
+        return redirect(url_for("game_page", game_id=game_id))
 
     can_buy = False
 
@@ -294,7 +299,7 @@ def roll_dice():
     if not game_over and not can_buy:
         waiting_for_ai = True
 
-    return redirect(url_for("home"))
+    return redirect(url_for("game_page", game_id=game_id))
 
 
 @app.route("/buy", methods=["POST"])
@@ -302,7 +307,7 @@ def buy_property():
     global can_buy, waiting_for_ai
 
     if game_over:
-        return redirect(url_for("home"))
+        return redirect(url_for("game_page", game_id=game_id))
 
     player = get_player()
     tile = get_current_tile()
@@ -331,7 +336,7 @@ def buy_property():
     play_ai_turns_until_player()
     update_buy_status()
 
-    return redirect(url_for("home"))
+    return redirect(url_for("game_page", game_id=game_id))
 
 
 @app.route("/skip-buy", methods=["POST"])
@@ -343,14 +348,14 @@ def skip_buy():
     can_buy = False
     waiting_for_ai = True
 
-    return redirect(url_for("home"))
+    return redirect(url_for("game_page", game_id=game_id))
 
 @app.route("/ai-turn", methods=["POST"])
 def ai_turn():
     global waiting_for_ai, can_buy
 
     if game_over:
-        return redirect(url_for("home"))
+        return redirect(url_for("game_page", game_id=game_id))
 
     can_buy = False
 
@@ -370,12 +375,12 @@ def ai_turn():
 
         if game_over:
             waiting_for_ai = False
-            return redirect(url_for("home"))
+            return redirect(url_for("game_page", game_id=game_id))
 
     waiting_for_ai = False
     update_buy_status()
 
-    return redirect(url_for("home"))
+    return redirect(url_for("game_page", game_id=game_id))
 
 
 @app.route("/reset", methods=["POST"])
@@ -389,7 +394,7 @@ def reset_game():
     game_over = False
     waiting_for_ai = False
 
-    return redirect(url_for("home"))
+    return redirect(url_for("game_page", game_id=game_id))
 
 
 if __name__ == "__main__":
