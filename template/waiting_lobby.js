@@ -37,13 +37,3 @@ document.getElementById("ready-btn").addEventListener("click", function () {
 document.getElementById("leave-lobby-btn").addEventListener("click", function () {
     alert("Leave Lobby button clicked");
 });
-
-document.getElementById("start-game-btn").addEventListener("click", function () {
-    const lobbyStatus = document.getElementById("lobby-status");
-
-    if (lobbyStatus.textContent === "All players are ready.") {
-        alert("Starting game...");
-    } else {
-        alert("Cannot start game yet. All players must be ready.");
-    }
-});

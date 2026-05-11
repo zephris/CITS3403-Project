@@ -258,6 +258,23 @@ def render_game_page(dice_result=None):
 def home():
     return redirect(url_for("lobby_page"))
 
+@app.route("/lobby")
+def lobby_page():
+    return render_template("waiting_lobby.html")
+
+@app.route("/lobby/start", methods=["POST"])
+def start_lobby_game():
+    global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, game_id
+
+    game_id = "local_demo_game"
+    game_state = engine.initialize_game(players)
+    game_log = ["Game started! Player 1 is on GO."]
+    last_roll = None
+    can_buy = False
+    game_over = False
+    waiting_for_ai = False
+
+    return redirect(url_for("game_page", game_id=game_id))
 
 @app.route("/game/<game_id>")
 def game_page(game_id):
