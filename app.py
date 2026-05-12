@@ -1,9 +1,15 @@
 from flask import Flask, render_template, redirect, url_for, request
+from models import db, Lobby, LobbyPlayer, LobbyMessage
 from template.backend.app.game_logic.engine import load_game_config, GameEngine
 import random
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db.init_app(app)
 
 config = load_game_config("template/backend/app/game_logic/data/monopoly_standard.json")
 engine = GameEngine(config)
@@ -573,4 +579,7 @@ def reset_game():
 
 
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+
     app.run(debug=True)
