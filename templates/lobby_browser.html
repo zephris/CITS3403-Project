@@ -68,7 +68,7 @@
                                 <tr>
                                     <td>{{ lobby.name }}</td>
                                     <td>{{ lobby.host }}</td>
-                                    <td>{{ lobby.players }} / {{ lobby.max_players }}</td>
+                                    <td>{{ lobby.players|length }} / {{ lobby.max_players }}</td>
                                     <td>
                                         {% if lobby.status == "Full" %}
                                         <span class="badge bg-secondary">Full</span>
@@ -79,7 +79,7 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if lobby.players >= lobby.max_players %}
+                                        {% if lobby.players|length >= lobby.max_players %}
                                         <button class="btn btn-sm btn-secondary" disabled>
                                             Full
                                         </button>

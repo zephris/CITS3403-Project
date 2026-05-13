@@ -305,25 +305,25 @@ def render_game_page(dice_result=None):
 
 @app.route("/")
 def home():
-    return redirect(url_for("lobby_page"))
+    return redirect(url_for("lobby_browser"))
 
 @app.route("/browser")
 def lobby_browser():
-    search_text = request.args.get("search", "").strip().lower()
+    search_text = request.args.get("search", "").strip()
 
-    lobbies = lobby_browser_state["lobbies"]
+    query = Lobby.query
 
     if search_text:
-        lobbies = [
-            lobby for lobby in lobbies
-            if search_text in lobby["name"].lower()
-            or search_text in lobby["host"].lower()
-        ]
+        query = query.filter(
+            db.or_(
+                Lobby.name.ilike(f"%{search_text}%"),
+                Lobby.host_name.ilike(f"%{search_text}%")
+            )
+        )
 
-    open_rooms = sum(
-        1 for lobby in lobby_browser_state["lobbies"]
-        if lobby["players"] < lobby["max_players"]
-    )
+    lobbies = query.order_by(Lobby.created_at.desc()).all()
+
+    open_rooms = Lobby.query.filter(Lobby.status == "waiting").count()
 
     return render_template(
         "lobby_browser.html",
@@ -339,85 +339,186 @@ def create_browser_lobby():
     max_players = int(request.form.get("max_players", 4))
 
     if not lobby_name:
-        lobby_name = f"New Lobby {lobby_browser_state['next_lobby_id']}"
+        lobby_name = "New Lobby"
 
     max_players = max(2, min(max_players, 4))
 
-    new_lobby = {
-        "id": lobby_browser_state["next_lobby_id"],
-        "name": lobby_name,
-        "host": "Player 1",
-        "players": 1,
-        "max_players": max_players,
-        "status": "Waiting"
-    }
+    new_lobby = Lobby(
+        name=lobby_name,
+        lobby_type="public",
+        host_name="Player 1",
+        max_players=max_players,
+        invite_code=Lobby.generate_invite_code(),
+        status="waiting"
+    )
 
-    lobby_browser_state["lobbies"].append(new_lobby)
-    lobby_browser_state["next_lobby_id"] += 1
+    db.session.add(new_lobby)
+    db.session.commit()
 
-    return redirect(url_for("lobby_page"))
+    host_player = LobbyPlayer(
+        lobby_id=new_lobby.id,
+        player_name="Player 1",
+        is_host=True,
+        is_ready=True
+    )
+
+    welcome_message = LobbyMessage(
+        lobby_id=new_lobby.id,
+        sender_name="System",
+        message_text="Welcome to the lobby."
+    )
+
+    db.session.add(host_player)
+    db.session.add(welcome_message)
+    db.session.commit()
+
+    return redirect(url_for("lobby_page", lobby_id=new_lobby.id))
 
 
 @app.route("/browser/join/<int:lobby_id>", methods=["POST"])
 def join_browser_lobby(lobby_id):
-    for lobby in lobby_browser_state["lobbies"]:
-        if lobby["id"] == lobby_id and lobby["players"] < lobby["max_players"]:
-            lobby["players"] += 1
+    lobby = db.session.get(Lobby, lobby_id)
 
-            if lobby["players"] >= lobby["max_players"]:
-                lobby["status"] = "Full"
+    if lobby is None:
+        return redirect(url_for("lobby_browser"))
 
-            return redirect(url_for("lobby_page"))
+    if lobby.status != "waiting":
+        return redirect(url_for("lobby_browser"))
 
-    return redirect(url_for("lobby_browser"))
+    if len(lobby.players) >= lobby.max_players:
+        lobby.status = "full"
+        db.session.commit()
+        return redirect(url_for("lobby_browser"))
+
+    existing_player = LobbyPlayer.query.filter_by(
+        lobby_id=lobby.id,
+        player_name="Player 2"
+    ).first()
+
+    if existing_player is None:
+        player = LobbyPlayer(
+            lobby_id=lobby.id,
+            player_name="Player 2",
+            is_host=False,
+            is_ready=False
+        )
+        db.session.add(player)
+
+    if len(lobby.players) + 1 >= lobby.max_players:
+        lobby.status = "full"
+
+    db.session.commit()
+
+    return redirect(url_for("lobby_page", lobby_id=lobby.id))
 
 
 @app.route("/browser/quick-join", methods=["POST"])
 def quick_join_lobby():
-    for lobby in lobby_browser_state["lobbies"]:
-        if lobby["players"] < lobby["max_players"]:
-            lobby["players"] += 1
+    lobbies = Lobby.query.filter_by(status="waiting").order_by(Lobby.created_at.asc()).all()
 
-            if lobby["players"] >= lobby["max_players"]:
-                lobby["status"] = "Full"
-
-            return redirect(url_for("lobby_page"))
+    for lobby in lobbies:
+        if len(lobby.players) < lobby.max_players:
+            return redirect(url_for("join_browser_lobby", lobby_id=lobby.id))
 
     return redirect(url_for("lobby_browser"))
 
-@app.route("/lobby")
-def lobby_page():
-    lobby_status = "All players are ready." if lobby_demo_state["player2_ready"] else "Waiting for players..."
+@app.route("/lobby/<int:lobby_id>")
+def lobby_page(lobby_id):
+    lobby = db.session.get(Lobby, lobby_id)
+
+    if lobby is None:
+        return redirect(url_for("lobby_browser"))
+
+    players = LobbyPlayer.query.filter_by(lobby_id=lobby.id).order_by(LobbyPlayer.joined_at.asc()).all()
+    messages = LobbyMessage.query.filter_by(lobby_id=lobby.id).order_by(LobbyMessage.created_at.asc()).all()
+
+    player_count = len(players)
+    lobby_status = "All players are ready." if players and all(player.is_ready for player in players) else "Waiting for players..."
 
     return render_template(
         "waiting_lobby.html",
-        player2_ready=lobby_demo_state["player2_ready"],
-        lobby_status=lobby_status,
-        chat_messages=lobby_demo_state["messages"]
+        lobby=lobby,
+        players=players,
+        messages=messages,
+        player_count=player_count,
+        lobby_status=lobby_status
     )
-@app.route("/lobby/ready", methods=["POST"])
-def toggle_lobby_ready():
-    lobby_demo_state["player2_ready"] = not lobby_demo_state["player2_ready"]
-    return redirect(url_for("lobby_page"))
+@app.route("/lobby/<int:lobby_id>/ready", methods=["POST"])
+def toggle_lobby_ready(lobby_id):
+    player = LobbyPlayer.query.filter_by(
+        lobby_id=lobby_id,
+        player_name="Player 2"
+    ).first()
+
+    if player is None:
+        player = LobbyPlayer(
+            lobby_id=lobby_id,
+            player_name="Player 2",
+            is_host=False,
+            is_ready=False
+        )
+        db.session.add(player)
+
+    player.is_ready = not player.is_ready
+    db.session.commit()
+
+    return redirect(url_for("lobby_page", lobby_id=lobby_id))
 
 
-@app.route("/lobby/leave", methods=["POST"])
-def leave_lobby():
-    lobby_demo_state["player2_ready"] = False
-    return redirect(url_for("lobby_page"))
+@app.route("/lobby/<int:lobby_id>/leave", methods=["POST"])
+def leave_lobby(lobby_id):
+    player = LobbyPlayer.query.filter_by(
+        lobby_id=lobby_id,
+        player_name="Player 2"
+    ).first()
+
+    if player:
+        db.session.delete(player)
+        db.session.commit()
+
+    return redirect(url_for("lobby_browser"))
 
 
-@app.route("/lobby/chat", methods=["POST"])
-def lobby_chat():
-    message = request.form.get("message", "").strip()
+@app.route("/lobby/<int:lobby_id>/chat", methods=["POST"])
+def lobby_chat(lobby_id):
+    message_text = request.form.get("message", "").strip()
 
-    if message:
-        lobby_demo_state["messages"].append({
-            "sender": "Player 2",
-            "text": message
-        })
+    if message_text:
+        message = LobbyMessage(
+            lobby_id=lobby_id,
+            sender_name="Player 2",
+            message_text=message_text
+        )
+        db.session.add(message)
+        db.session.commit()
 
-    return redirect(url_for("lobby_page"))
+    return redirect(url_for("lobby_page", lobby_id=lobby_id))
+
+
+@app.route("/lobby/<int:lobby_id>/start", methods=["POST"])
+def start_lobby_game_from_lobby(lobby_id):
+    global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, game_id
+
+    lobby = db.session.get(Lobby, lobby_id)
+
+    if lobby is None:
+        return redirect(url_for("lobby_browser"))
+
+    lobby.status = "in_game"
+    db.session.commit()
+
+    game_id = f"lobby_{lobby.id}_game"
+    game_state = engine.initialize_game(players)
+    game_log = [f"Game started from lobby: {lobby.name}. Player 1 is on GO."]
+    last_roll = None
+    can_buy = False
+    game_over = False
+    waiting_for_ai = False
+
+    return redirect(url_for("game_page", game_id=game_id))
+
+
+
 @app.route("/lobby/start", methods=["POST"])
 def start_lobby_game():
     global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, game_id
