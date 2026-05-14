@@ -665,3 +665,149 @@ body::before {
         font-size: 0.72rem;
     }
 }
+
+
+/* Temporary online multiplayer banner */
+.online-demo-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 12px 28px rgba(31, 41, 51, 0.12);
+    backdrop-filter: blur(10px);
+}
+
+.online-demo-banner strong,
+.online-demo-banner span {
+    display: block;
+}
+
+.online-demo-banner span {
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.online-status-pill {
+    padding: 0.55rem 0.9rem;
+    border-radius: 999px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.online-status-pill.my-turn {
+    color: #166534;
+    background: #dcfce7;
+}
+
+.online-status-pill.waiting-turn {
+    color: #92400e;
+    background: #fef3c7;
+}
+
+@media (max-width: 768px) {
+    .online-demo-banner {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+
+/* Game mode selection lobby */
+.mode-page {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 32px 16px;
+    background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.95), transparent 34%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2));
+}
+
+.mode-wrapper {
+    width: min(100%, 980px);
+}
+
+.mode-card {
+    border-radius: 30px;
+    padding: clamp(24px, 4vw, 44px);
+    background: rgba(255, 250, 240, 0.94);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(10px);
+}
+
+.mode-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: #1f2937;
+    color: #fff;
+    font-weight: 800;
+    margin-bottom: 18px;
+}
+
+.mode-card h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 950;
+    margin-bottom: 10px;
+    color: #b91c1c;
+}
+
+.mode-intro,
+.mode-note {
+    color: var(--muted);
+    font-weight: 650;
+}
+
+.mode-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+    margin: 28px 0 22px;
+}
+
+.mode-option {
+    padding: 24px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 14px 32px rgba(31, 41, 51, 0.12);
+    border: 1px solid rgba(31,41,51,0.08);
+}
+
+.mode-icon {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border-radius: 18px;
+    background: #fff7e6;
+    font-size: 1.8rem;
+    margin-bottom: 14px;
+}
+
+.mode-option h2 {
+    font-size: 1.35rem;
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+
+.mode-option p {
+    min-height: 72px;
+    color: var(--muted);
+    font-weight: 650;
+}
+
+@media (max-width: 768px) {
+    .mode-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mode-option p {
+        min-height: auto;
+    }
+}
