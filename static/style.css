@@ -1,224 +1,770 @@
-body { background-color: #f4f4f9; }
-        
-        /* Monopoly Board Grid System */
-        .monopoly-board {
-            display: grid;
-            grid-template-columns: repeat(11, 1fr);
-            grid-template-rows: repeat(11, 1fr);
-            gap: 2px;
-            background-color: #333;
-            border: 2px solid #333;
-            width: 100%;
-            aspect-ratio: 1 / 1;
-             /* Responsive */
-            min-width: 650px;
-            max-width: 900px;
-            margin: 0 auto;
-        }
+/* =========================
+   Monopoly Game UI - Polished Theme
+   Replace static/style.css with this file
+   ========================= */
 
-        /* Base Tile Style */
-        .tile {
-            background-color: #cce3c6;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.65rem;
-            text-align: center;
-            padding: 2px;
-            position: relative;
-            overflow: hidden;
-        }
+:root {
+    --board-dark: #14251c;
+    --board-green: #cfe8c7;
+    --paper: #fffaf0;
+    --panel: rgba(255, 255, 255, 0.92);
+    --shadow: 0 18px 45px rgba(17, 24, 39, 0.22);
+    --player: #e53935;
+    --ai: #1e88e5;
+    --gold: #f6c343;
+    --text-dark: #1f2937;
+}
 
-        /* Property Color Headers */
-        .color-bar {
-            width: 100%;
-            height: 22%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            border-bottom: 1px solid #333;
-        }
+* {
+    box-sizing: border-box;
+}
 
-        /* Center Area */
-        .center-space {
-            grid-column: 2 / 11;
-            grid-row: 2 / 11;
-            background-color: #eaf1e8;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--text-dark);
+    background:
+        radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.95), transparent 28%),
+        radial-gradient(circle at 90% 5%, rgba(255, 218, 121, 0.28), transparent 30%),
+        linear-gradient(135deg, #dfeeda 0%, #f4ecd1 45%, #d7e7f5 100%);
+    overflow-x: hidden;
+}
 
-        .owned-player {
-            border: 4px solid #d32f2f;
-        }
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.16) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.16) 1px, transparent 1px);
+    background-size: 36px 36px;
+    pointer-events: none;
+    z-index: -1;
+}
 
-        .owned-ai {
-            border: 4px solid #1976d2;
-        }
+.navbar {
+    background: linear-gradient(90deg, #111827, #1f2937, #111827) !important;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+}
 
-        .player-token {
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            font-size: 1.2rem;
-            background-color: white;
-            border: 2px solid #d32f2f;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 5;
-        }
+.navbar-brand {
+    font-weight: 900;
+    letter-spacing: 0.8px;
+}
 
-        .ai-token {
-            position: absolute;
-            top: 4px;
-            left: 4px;
-            font-size: 1.2rem;
-            background-color: white;
-            border: 2px solid #1976d2;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 5;
-        }
+.container-fluid {
+    max-width: 1580px;
+}
 
-        /* Corner Tiles */
-        .corner { background-color: #eaf1e8; font-weight: bold; font-size: 0.8rem;}
-        
-        .price { font-weight: bold; margin-top: auto; }
-        .title { margin-top: 25px; font-weight: 600; line-height: 1.1;}
-        .non-prop-title { margin-top: auto; margin-bottom: auto; font-weight: bold;}
+.card {
+    border: 0 !important;
+    border-radius: 24px !important;
+    overflow: hidden;
+    background: var(--panel) !important;
+    box-shadow: var(--shadow) !important;
+    backdrop-filter: blur(12px);
+}
+
+.card-header {
+    border: 0 !important;
+    padding: 14px 18px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.3px;
+}
+
+.card-body {
+    overflow-x: auto;
+}
+
+/* Board */
+.monopoly-board {
+    display: grid;
+    grid-template-columns: repeat(11, 1fr);
+    grid-template-rows: repeat(11, 1fr);
+    gap: 4px;
+    width: 100%;
+    min-width: 680px;
+    max-width: 980px;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+    padding: 8px;
+    border-radius: 28px;
+    border: 10px solid var(--board-dark);
+    background:
+        linear-gradient(135deg, rgba(255,255,255,0.12), transparent),
+        var(--board-dark);
+    box-shadow:
+        inset 0 0 0 3px rgba(255,255,255,0.12),
+        0 25px 55px rgba(0,0,0,0.34);
+}
+
+/* Tile */
+.tile {
+    background: linear-gradient(180deg, #edf8e9, #cce4c4);
+    border: 2px solid rgba(20, 37, 28, 0.38);
+    border-radius: 7px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+    font-size: 0.61rem;
+    line-height: 1.08;
+    padding: 3px;
+
+    transition:
+        transform 0.16s ease,
+        box-shadow 0.16s ease,
+        border-color 0.16s ease,
+        filter 0.16s ease;
+}
+
+.tile:hover {
+    transform: translateY(-2px) scale(1.035);
+    box-shadow: 0 10px 18px rgba(0,0,0,0.27);
+    z-index: 30;
+    filter: brightness(1.04);
+}
+
+.corner {
+    background:
+        radial-gradient(circle at top, #ffffff, transparent 55%),
+        linear-gradient(145deg, #fff7d9, #d8ecd2);
+    font-size: 0.78rem;
+    font-weight: 950;
+    color: #17251d;
+}
+
+.corner .fs-4 {
+    font-size: 1.18rem !important;
+    font-weight: 950;
+}
+
+.corner .fs-5 {
+    font-size: 0.92rem !important;
+}
+
+/* Property colour strip */
+.color-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 23%;
+    border-bottom: 2px solid rgba(0,0,0,0.5);
+    box-shadow: inset 0 -4px 0 rgba(255,255,255,0.18);
+}
+
+.title {
+    margin-top: 25px;
+    padding: 0 2px;
+    font-weight: 850;
+    color: #172033;
+    letter-spacing: -0.15px;
+}
+
+.price {
+    margin-top: auto;
+    margin-bottom: 4px;
+    font-weight: 950;
+    color: #111827;
+    background: rgba(255,255,255,0.6);
+    border-radius: 999px;
+    padding: 1px 5px;
+}
+
+.non-prop-title {
+    margin: auto 2px;
+    font-weight: 950;
+    color: #1f2937;
+}
+
+/* Center */
+.center-space {
+    grid-column: 2 / 11;
+    grid-row: 2 / 11;
+    position: relative;
+    border-radius: 20px;
+    border: 3px solid rgba(20,37,28,0.25);
+    background:
+        radial-gradient(circle at 50% 18%, rgba(255,255,255,0.92), transparent 28%),
+        linear-gradient(145deg, rgba(255,250,240,0.94), rgba(219,239,211,0.92));
+    box-shadow: inset 0 0 45px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    text-align: center;
+    padding: 18px;
+}
+
+.center-space::before {
+    content: "MONOPOLY";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-25deg);
+    font-size: clamp(3.2rem, 8vw, 7.2rem);
+    font-weight: 1000;
+    letter-spacing: 10px;
+    color: rgba(211, 47, 47, 0.08);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.center-space > * {
+    position: relative;
+    z-index: 2;
+}
+
+.center-space h2 {
+    margin-bottom: 0.45rem !important;
+    font-size: clamp(1.8rem, 4vw, 3.1rem);
+    font-weight: 1000 !important;
+    color: #c62828 !important;
+    letter-spacing: 7px !important;
+    text-shadow: 0 4px 0 rgba(0,0,0,0.08);
+}
+
+.center-space h4 {
+    font-weight: 750;
+    color: #52616f !important;
+}
+
+.center-space .card {
+    border-radius: 16px !important;
+    box-shadow: 0 10px 18px rgba(0,0,0,0.12) !important;
+    background: rgba(255,255,255,0.72) !important;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 999px !important;
+    font-weight: 800 !important;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e53935, #b71c1c) !important;
+    border: 0 !important;
+    padding: 12px 30px !important;
+    box-shadow: 0 14px 24px rgba(229, 57, 53, 0.36) !important;
+}
+
+.btn-danger:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #43a047, #1b5e20) !important;
+    border: 0 !important;
+}
+
+.btn-outline-danger,
+.btn-outline-secondary {
+    background: rgba(255,255,255,0.72) !important;
+}
+
+/* Game state text */
+.center-space p {
+    margin: 2px 0;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.58);
+    font-size: 0.92rem;
+}
+
+/* Active tile */
+.active-tile {
+    outline: 4px solid var(--gold);
+    box-shadow:
+        0 0 0 4px rgba(246,195,67,0.28),
+        0 0 22px rgba(246,195,67,0.98),
+        inset 0 0 0 2px rgba(255,255,255,0.78);
+    z-index: 20;
+}
+
+/* Ownership */
+.owned-player {
+    border: 4px solid var(--player) !important;
+    box-shadow:
+        inset 0 0 0 2px rgba(229,57,53,0.16),
+        0 0 9px rgba(229,57,53,0.35);
+}
+
+.owned-ai {
+    border: 4px solid var(--ai) !important;
+    box-shadow:
+        inset 0 0 0 2px rgba(30,136,229,0.16),
+        0 0 9px rgba(30,136,229,0.35);
+}
+
+/* Tokens */
+.player-token,
+.ai-token {
+    position: absolute;
+    width: 31px;
+    height: 31px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #fff;
+    font-size: 1.1rem;
+    z-index: 50;
+    box-shadow:
+        0 6px 12px rgba(0,0,0,0.34),
+        inset 0 0 0 2px rgba(255,255,255,0.9);
+}
+
+.player-token {
+    right: 4px;
+    bottom: 4px;
+    border: 3px solid var(--player);
+}
+
+.ai-token {
+    left: 4px;
+    top: 4px;
+    border: 3px solid var(--ai);
+}
+
+/* Sidebar */
+.list-group-item {
+    border-color: rgba(0,0,0,0.05) !important;
+    padding: 14px 16px !important;
+}
+
+.badge {
+    padding: 8px 12px !important;
+    font-size: 0.85rem !important;
+}
+
+.bg-success.rounded-pill {
+    background: linear-gradient(135deg, #ef5350, #c62828) !important;
+}
+
+.bg-secondary.rounded-pill {
+    background: linear-gradient(135deg, #42a5f5, #1565c0) !important;
+}
+
+.card-body[style*="height: 250px"] {
+    height: 340px !important;
+    background:
+        linear-gradient(180deg, #f8fafc, #eef4f8) !important;
+}
+
+.card-body[style*="height: 250px"] p {
+    background: #ffffff;
+    border-left: 4px solid #cbd5e1;
+    padding: 8px 10px;
+    margin-bottom: 8px !important;
+    border-radius: 10px;
+    box-shadow: 0 3px 9px rgba(15, 23, 42, 0.06);
+}
+
+.card-body[style*="height: 250px"] p:first-child {
+    border-left-color: var(--gold);
+}
+
+/* Footer chat input */
+.input-group .form-control {
+    border-radius: 999px 0 0 999px !important;
+}
+
+.input-group .btn {
+    border-radius: 0 999px 999px 0 !important;
+}
+
+/* Alerts */
+.alert {
+    border: 0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.1);
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .monopoly-board {
+        min-width: 620px;
+    }
+
+    .tile {
+        font-size: 0.54rem;
+    }
+
+    .center-space {
+        padding: 12px;
+    }
+
+    .center-space h2 {
+        font-size: 1.65rem;
+        letter-spacing: 4px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    .monopoly-board {
+        min-width: 560px;
+        padding: 5px;
+        gap: 3px;
+    }
+
+    .tile {
+        font-size: 0.44rem;
+        padding: 1px;
+    }
+
+    .title {
+        margin-top: 14px;
+        font-size: 0.42rem;
+    }
+
+    .price {
+        font-size: 0.42rem;
+        padding: 0 4px;
+    }
+
+    .corner {
+        font-size: 0.52rem;
+    }
+
+    .center-space h2 {
+        font-size: 1.15rem;
+        letter-spacing: 2px !important;
+    }
+
+    .center-space h4 {
+        font-size: 0.8rem;
+    }
+
+    .center-space .card {
+        width: 104px !important;
+        height: 58px !important;
+        font-size: 0.62rem;
+    }
+
+    .center-space p {
+        font-size: 0.72rem;
+        padding: 2px 7px;
+    }
+
+    .btn-danger {
+        padding: 7px 14px !important;
+        font-size: 0.76rem !important;
+    }
+
+    .player-token,
+    .ai-token {
+        width: 24px;
+        height: 24px;
+        font-size: 0.88rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .monopoly-board {
+        min-width: 510px;
+    }
+
+    .tile {
+        font-size: 0.39rem;
+    }
+}
 
 
-        /* Prevent horizontal overflow of the page */
-        html, body {
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
+/* Smooth dice rolling UI */
+html { scroll-behavior: smooth; }
+.tile, .btn, .card, .player-token, .ai-token { will-change: transform; }
+.btn:disabled { opacity: 0.78; cursor: not-allowed; transform: none !important; }
 
-        /* Allow horizontal scrolling on smaller screens for the board container */
-        .card-body {
-            overflow-x: auto;
-        }
+.turn-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.72);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+    font-weight: 800;
+    color: #52616f;
+}
+.status-icon { display: inline-block; animation: status-bob 0.9s ease-in-out infinite alternate; }
+.dice-stage {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    min-height: 76px;
+}
+.dice-face {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #ffffff, #f1f5f9);
+    border: 2px solid rgba(15, 23, 42, 0.12);
+    color: #111827;
+    font-size: 3rem;
+    line-height: 1;
+    box-shadow: 0 14px 24px rgba(15, 23, 42, 0.18);
+    transform: translateZ(0);
+}
+.rolling .dice-face:first-child { animation: dice-shake-left 0.42s ease-in-out infinite; }
+.rolling .dice-face:last-child { animation: dice-shake-right 0.42s ease-in-out infinite; }
+.dice-final .dice-face {
+    animation: dice-pop 0.38s ease-out both;
+    box-shadow: 0 0 0 5px rgba(246, 195, 67, 0.25), 0 16px 28px rgba(15, 23, 42, 0.2);
+}
+.dice-message, .dice-result {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.75);
+    color: #166534;
+    font-weight: 900;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+.dice-result-icon { animation: dice-result-pulse 0.9s ease-in-out infinite alternate; }
 
-        /* Tablet screens */
-        @media (max-width: 992px) {
-            .monopoly-board {
-                min-width: 600px;
-            }
+@keyframes dice-shake-left {
+    0% { transform: translateX(0) rotate(0deg) scale(1); }
+    25% { transform: translateX(-8px) translateY(-5px) rotate(-18deg) scale(1.08); }
+    50% { transform: translateX(5px) translateY(4px) rotate(12deg) scale(0.98); }
+    75% { transform: translateX(-3px) translateY(6px) rotate(-9deg) scale(1.05); }
+    100% { transform: translateX(0) rotate(0deg) scale(1); }
+}
+@keyframes dice-shake-right {
+    0% { transform: translateX(0) rotate(0deg) scale(1); }
+    25% { transform: translateX(8px) translateY(5px) rotate(18deg) scale(1.08); }
+    50% { transform: translateX(-5px) translateY(-4px) rotate(-12deg) scale(0.98); }
+    75% { transform: translateX(3px) translateY(-6px) rotate(9deg) scale(1.05); }
+    100% { transform: translateX(0) rotate(0deg) scale(1); }
+}
+@keyframes dice-pop {
+    0% { transform: scale(0.88); }
+    55% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+}
+@keyframes status-bob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+@keyframes dice-result-pulse { from { transform: rotate(-8deg) scale(1); } to { transform: rotate(8deg) scale(1.08); } }
 
-            .tile {
-                font-size: 0.55rem;
-            }
+@media (max-width: 768px) {
+    .dice-face { width: 46px; height: 46px; border-radius: 14px; font-size: 2.2rem; }
+    .dice-stage { min-height: 54px; gap: 10px; }
+}
 
-            .center-space h2 {
-                font-size: 1.5rem;
-            }
+/* AJAX soft-update polish */
+#game-board-panel, #game-sidebar {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.dice-message {
+    min-height: 38px;
+}
 
-            .center-space h4 {
-                font-size: 1rem;
-            }
-        }
+/* =========================
+   Mobile / LAN phone layout fix
+   Put this at the END of static/style.css
+   ========================= */
 
-        /* Mobile screens */
-        @media (max-width: 768px) {
-            .container-fluid {
-                padding-left: 8px;
-                padding-right: 8px;
-            }
+@media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
 
-            .monopoly-board {
-                min-width: 560px;
-            }
+    .container-fluid {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
 
-            .tile {
-                font-size: 0.45rem;
-                padding: 1px;
-            }
+    .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
 
-            .title {
-                margin-top: 14px;
-                font-size: 0.45rem;
-            }
+    #game-board-panel,
+    #game-sidebar {
+        width: 100%;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
 
-            .price {
-                font-size: 0.45rem;
-            }
+    #game-board-panel .card-body {
+        padding: 8px !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
 
-            .corner {
-                font-size: 0.55rem;
-            }
+    .monopoly-board {
+        min-width: 720px;
+        width: 720px;
+        height: 720px;
+        max-width: none;
+        margin: 0 auto;
+        transform-origin: top left;
+    }
 
-            .center-space h2 {
-                font-size: 1.1rem;
-                letter-spacing: 3px;
-            }
+    .tile {
+        font-size: 0.42rem;
+        line-height: 1.05;
+        padding: 2px;
+        border-radius: 6px;
+    }
 
-            .center-space h4 {
-                font-size: 0.8rem;
-            }
+    .title {
+        font-size: 0.42rem;
+        margin-top: 14px;
+    }
 
-            .center-space .card {
-                width: 110px !important;
-                height: 60px !important;
-                font-size: 0.65rem;
-            }
+    .price {
+        font-size: 0.42rem;
+        padding: 1px 4px;
+    }
 
-            .center-space button {
-                font-size: 0.75rem;
-                padding: 6px 10px;
-            }
-        }
+    .corner {
+        font-size: 0.52rem;
+    }
 
-        /* Small mobile devices */
-        @media (max-width: 480px) {
-            .monopoly-board {
-                min-width: 500px;
-            }
+    .player-token,
+    .ai-token {
+        width: 22px;
+        height: 22px;
+        font-size: 0.8rem;
+    }
 
-            .tile {
-                font-size: 0.4rem;
-            }
+    .center-space {
+        padding: 10px;
+        gap: 5px;
+    }
 
-            .title {
-                font-size: 0.4rem;
-            }
+    .center-space h2 {
+        font-size: 1.4rem !important;
+        letter-spacing: 2px !important;
+        margin-bottom: 4px !important;
+    }
 
-            .price {
-                font-size: 0.4rem;
-            }
-        }
+    .center-space h4 {
+        font-size: 0.85rem;
+        margin-bottom: 8px !important;
+    }
 
-        /* Fix corner text overflow */
-        .corner {
-            overflow: hidden;
-            word-break: break-word;
-            line-height: 1.1;
-        }
+    .center-space .d-flex.gap-4 {
+        gap: 8px !important;
+    }
 
-        .corner .fs-4 {
-            font-size: 1.2rem !important;
-        }
+    .center-space .card {
+        width: 95px !important;
+        height: 52px !important;
+        padding: 8px !important;
+        font-size: 0.62rem;
+    }
 
-        .corner .fs-5 {
-            font-size: 0.9rem !important;
-        }
+    .btn-danger {
+        padding: 8px 16px !important;
+        font-size: 0.85rem !important;
+    }
 
-        /* Adjust bottom and corner text layout */
-        .tile {
-            line-height: 1.1;
-        }
+    .center-space p,
+    .turn-status,
+    .dice-result,
+    .dice-message {
+        font-size: 0.72rem;
+        padding: 5px 9px;
+        margin-top: 4px !important;
+    }
 
-        .price {
-            margin-bottom: 4px;
-        }
+    .dice-stage {
+        min-height: 52px;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .dice-face {
+        width: 42px;
+        height: 42px;
+        font-size: 2rem;
+        border-radius: 12px;
+    }
+
+    .house-panel {
+        font-size: 0.68rem;
+        padding: 6px 8px;
+        max-width: 230px;
+    }
+
+    .house-stack {
+        bottom: 26px;
+        font-size: 0.52rem;
+    }
+
+    #game-sidebar {
+        margin-top: 12px;
+    }
+
+    #game-sidebar .card {
+        border-radius: 18px !important;
+    }
+
+    #game-sidebar .card-body {
+        max-height: 220px;
+        overflow-y: auto;
+    }
+
+    .list-group-item {
+        font-size: 0.85rem;
+        padding: 10px 12px !important;
+    }
+
+    .badge {
+        font-size: 0.75rem !important;
+        padding: 6px 9px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .monopoly-board {
+        min-width: 680px;
+        width: 680px;
+        height: 680px;
+    }
+
+    .tile {
+        font-size: 0.38rem;
+    }
+
+    .title,
+    .price {
+        font-size: 0.38rem;
+    }
+
+    .center-space h2 {
+        font-size: 1.15rem !important;
+    }
+
+    .center-space .card {
+        width: 82px !important;
+        height: 48px !important;
+        font-size: 0.55rem;
+    }
+
+    .btn-danger {
+        font-size: 0.76rem !important;
+        padding: 7px 12px !important;
+    }
+}
