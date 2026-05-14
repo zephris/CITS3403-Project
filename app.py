@@ -1,5 +1,6 @@
-from flask import Flask, render_template, redirect, url_for, request
-from models import db, Lobby, LobbyPlayer, LobbyMessage
+from flask import Flask, render_template, redirect, url_for, request, session
+from werkzeug.security import generate_password_hash, check_password_hash
+from models import db, User, Lobby, LobbyPlayer, LobbyMessage
 from template.backend.app.game_logic.engine import load_game_config, GameEngine
 import random
 
@@ -10,6 +11,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
+
+def get_current_username():
+    return session.get("username")
 
 config = load_game_config("template/backend/app/game_logic/data/monopoly_standard.json")
 engine = GameEngine(config)
@@ -305,10 +309,97 @@ def render_game_page(dice_result=None):
 
 @app.route("/")
 def home():
-    return redirect(url_for("lobby_browser"))
+    return render_template(
+        "home.html",
+        username=session.get("username")
+    )
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+
+        if not username or not password:
+            return render_template("register.html", error="Username and password are required.")
+
+        existing_user = User.query.filter_by(username=username).first()
+
+        if existing_user:
+            return render_template("register.html", error="Username already exists.")
+
+        new_user = User(
+            username=username,
+            password_hash=generate_password_hash(password)
+        )
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        session["user_id"] = new_user.id
+        session["username"] = new_user.username
+
+        return redirect(url_for("home"))
+
+    return render_template("register.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+
+        user = User.query.filter_by(username=username).first()
+
+        if user is None or not check_password_hash(user.password_hash, password):
+            return render_template("login.html", error="Invalid username or password.")
+
+        session["user_id"] = user.id
+        session["username"] = user.username
+
+        return redirect(url_for("home"))
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("home"))
+
+@app.route("/profile")
+def profile():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
+    user = User.query.filter_by(username=username).first()
+
+    hosted_lobbies = Lobby.query.filter_by(host_name=username).order_by(Lobby.created_at.desc()).all()
+
+    joined_lobby_players = LobbyPlayer.query.filter_by(player_name=username).order_by(LobbyPlayer.joined_at.desc()).all()
+
+    joined_lobbies = [lobby_player.lobby for lobby_player in joined_lobby_players]
+
+    total_lobbies = len(joined_lobbies)
+    hosted_count = len(hosted_lobbies)
+
+    return render_template(
+        "profile.html",
+        user=user,
+        username=username,
+        total_lobbies=total_lobbies,
+        hosted_count=hosted_count,
+        joined_lobbies=joined_lobbies
+    )
 
 @app.route("/browser")
 def lobby_browser():
+    if "username" not in session:
+        return redirect(url_for("login"))
+    
     search_text = request.args.get("search", "").strip()
 
     query = Lobby.query
@@ -538,6 +629,20 @@ def start_lobby_game():
         {"sender": "Player 2", "text": "Ready when you are."}
     ]
 }
+
+    return redirect(url_for("game_page", game_id=game_id))
+
+@app.route("/singleplayer")
+def singleplayer():
+    global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, game_id
+
+    game_id = "singleplayer_game"
+    game_state = engine.initialize_game(players)
+    game_log = ["Single player game started! Player 1 is on GO."]
+    last_roll = None
+    can_buy = False
+    game_over = False
+    waiting_for_ai = False
 
     return redirect(url_for("game_page", game_id=game_id))
 
