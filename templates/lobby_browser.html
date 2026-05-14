@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,22 +31,18 @@
                         <h2 class="mb-3">Lobby Browser</h2>
                         <p class="text-muted mb-4">Find a room to join or create your own lobby.</p>
 
-                        <div class="row g-3">
+                        <form action="{{ url_for('lobby_browser') }}" method="get" class="row g-3">
                             <div class="col-md-8">
-                                <input
-                                    id="search-input"
-                                    type="text"
-                                    class="form-control"
-                                    placeholder="Search lobby by room name or host..."
-                                >
+                                <input id="search-input" name="search" type="text" class="form-control"
+                                    placeholder="Search lobby by room name or host..." value="{{ search_text }}">
                             </div>
 
                             <div class="col-md-4">
-                                <button id="search-btn" class="btn btn-primary w-100">
+                                <button id="search-btn" type="submit" class="btn btn-primary w-100">
                                     Search
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
 
@@ -67,55 +64,36 @@
                             </thead>
 
                             <tbody id="lobby-list">
+                                {% for lobby in lobbies %}
                                 <tr>
-                                    <td>Perth Room 1</td>
-                                    <td>Player 1</td>
-                                    <td>2 / 4</td>
-                                    <td><span class="badge bg-success">Waiting</span></td>
+                                    <td>{{ lobby.name }}</td>
+                                    <td>{{ lobby.host }}</td>
+                                    <td>{{ lobby.players|length }} / {{ lobby.max_players }}</td>
                                     <td>
-                                        <button class="btn btn-sm btn-primary join-btn">
-                                            Join
-                                        </button>
+                                        {% if lobby.status == "Full" %}
+                                        <span class="badge bg-secondary">Full</span>
+                                        {% elif lobby.status == "Starting Soon" %}
+                                        <span class="badge bg-warning text-dark">Starting Soon</span>
+                                        {% else %}
+                                        <span class="badge bg-success">Waiting</span>
+                                        {% endif %}
                                     </td>
-                                </tr>
-
-                                <tr>
-                                    <td>WA Monopoly Fans</td>
-                                    <td>Anthony</td>
-                                    <td>4 / 4</td>
-                                    <td><span class="badge bg-secondary">Full</span></td>
                                     <td>
+                                        {% if lobby.players|length >= lobby.max_players %}
                                         <button class="btn btn-sm btn-secondary" disabled>
                                             Full
                                         </button>
+                                        {% else %}
+                                        <form action="{{ url_for('join_browser_lobby', lobby_id=lobby.id) }}"
+                                            method="post">
+                                            <button type="submit" class="btn btn-sm btn-primary">
+                                                Join
+                                            </button>
+                                        </form>
+                                        {% endif %}
                                     </td>
                                 </tr>
-
-                                <tr>
-                                    <td>City Match</td>
-                                    <td>Shuo</td>
-                                    <td>1 / 4</td>
-                                    <td><span class="badge bg-success">Waiting</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary join-btn">
-                                            Join
-                                        </button>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td>Late Night Game</td>
-                                    <td>Dazai</td>
-                                    <td>3 / 4</td>
-                                    <td>
-                                        <span class="badge bg-warning text-dark">Starting Soon</span>
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary join-btn">
-                                            Join
-                                        </button>
-                                    </td>
-                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -129,13 +107,19 @@
                     </div>
 
                     <div class="card-body d-grid gap-3">
-                        <button id="create-lobby-btn" class="btn btn-success">
-                            Create Lobby
-                        </button>
+                        <form action="{{ url_for('create_browser_lobby') }}" method="post">
+                            <input type="hidden" name="lobby_name" value="New Lobby">
+                            <input type="hidden" name="max_players" value="4">
+                            <button id="create-lobby-btn" type="submit" class="btn btn-success w-100">
+                                Create Lobby
+                            </button>
+                        </form>
 
-                        <button id="quick-join-btn" class="btn btn-outline-primary">
-                            Quick Join
-                        </button>
+                        <form action="{{ url_for('quick_join_lobby') }}" method="post">
+                            <button id="quick-join-btn" type="submit" class="btn btn-outline-primary w-100">
+                                Quick Join
+                            </button>
+                        </form>
                     </div>
                 </div>
 
@@ -145,8 +129,8 @@
                     </div>
 
                     <div class="card-body">
-                        <p><strong>Online Players:</strong> <span id="online-players">12</span></p>
-                        <p><strong>Open Rooms:</strong> <span id="open-rooms">4</span></p>
+                        <p><strong>Online Players:</strong> <span id="online-players">{{ online_players }}</span></p>
+                        <p><strong>Open Rooms:</strong> <span id="open-rooms">{{ open_rooms }}</span></p>
                         <p class="mb-0"><strong>Game Mode:</strong> Perth Edition</p>
                     </div>
                 </div>
@@ -154,6 +138,7 @@
 
         </div>
     </div>
-    <script src="{{ url_for('static', filename='lobby_browser.js') }}"></script>
+    
 </body>
+
 </html>
