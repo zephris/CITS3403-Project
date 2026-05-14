@@ -305,7 +305,7 @@ def render_game_page(dice_result=None):
 
 @app.route("/")
 def home():
-    return redirect(url_for("lobby_browser"))
+    return render_template("home.html")
 
 @app.route("/browser")
 def lobby_browser():
