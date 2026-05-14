@@ -12,15 +12,17 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
+
 def get_current_username():
     return session.get("username")
+
 
 config = load_game_config("template/backend/app/game_logic/data/monopoly_standard.json")
 engine = GameEngine(config)
 
 players = [
     {"player_id": "player1", "name": "Player 1"},
-    {"player_id": "ai_1", "name": "AI Player"}
+    {"player_id": "ai_1", "name": "AI Player"},
 ]
 
 # Temporary local ID for this prototype.
@@ -38,8 +40,8 @@ lobby_demo_state = {
     "messages": [
         {"sender": "System", "text": "Welcome to the lobby."},
         {"sender": "System", "text": "Waiting for more players to join."},
-        {"sender": "Player 2", "text": "Ready when you are."}
-    ]
+        {"sender": "Player 2", "text": "Ready when you are."},
+    ],
 }
 lobby_browser_state = {
     "lobbies": [
@@ -49,7 +51,7 @@ lobby_browser_state = {
             "host": "Player 1",
             "players": 2,
             "max_players": 4,
-            "status": "Waiting"
+            "status": "Waiting",
         },
         {
             "id": 2,
@@ -57,7 +59,7 @@ lobby_browser_state = {
             "host": "Anthony",
             "players": 4,
             "max_players": 4,
-            "status": "Full"
+            "status": "Full",
         },
         {
             "id": 3,
@@ -65,7 +67,7 @@ lobby_browser_state = {
             "host": "Shuo",
             "players": 1,
             "max_players": 4,
-            "status": "Waiting"
+            "status": "Waiting",
         },
         {
             "id": 4,
@@ -73,11 +75,13 @@ lobby_browser_state = {
             "host": "Dazai",
             "players": 3,
             "max_players": 4,
-            "status": "Starting Soon"
-        }
+            "status": "Starting Soon",
+        },
     ],
-    "next_lobby_id": 5
+    "next_lobby_id": 5,
 }
+
+
 def decision_provider(player_id, action, context):
     if action == "buy_property":
         if player_id.startswith("ai"):
@@ -176,12 +180,14 @@ def record_event(event_type, amount=0, metadata=None):
     if metadata is None:
         metadata = {}
 
-    print({
-        "game_id": game_id,
-        "event_type": event_type,
-        "amount": amount,
-        "metadata": metadata
-    })
+    print(
+        {
+            "game_id": game_id,
+            "event_type": event_type,
+            "amount": amount,
+            "metadata": metadata,
+        }
+    )
 
 
 def finalize_game():
@@ -200,15 +206,15 @@ def finalize_game():
                 "user_id": "player1",
                 "final_rank": 1 if game_state.winner_id == "player1" else 2,
                 "bankrupt_flag": getattr(player, "bankrupt", False),
-                "turns_taken": getattr(player, "turns_taken", 0)
+                "turns_taken": getattr(player, "turns_taken", 0),
             },
             {
                 "user_id": "ai_1",
                 "final_rank": 1 if game_state.winner_id == "ai_1" else 2,
                 "bankrupt_flag": getattr(ai_player, "bankrupt", False),
-                "turns_taken": getattr(ai_player, "turns_taken", 0)
-            }
-        ]
+                "turns_taken": getattr(ai_player, "turns_taken", 0),
+            },
+        ],
     }
 
     print(result)
@@ -233,7 +239,9 @@ def check_game_over():
 
     if game_state.winner_id and not game_over:
         game_over = True
-        game_log.append(f"Game over! Winner: {format_player_name(game_state.winner_id)}")
+        game_log.append(
+            f"Game over! Winner: {format_player_name(game_state.winner_id)}"
+        )
         finalize_game()
 
 
@@ -298,21 +306,21 @@ def render_game_page(dice_result=None):
         property_price=property_price,
         owner=owner,
         game_over=game_over,
-        winner=format_player_name(game_state.winner_id) if game_state.winner_id else None,
+        winner=(
+            format_player_name(game_state.winner_id) if game_state.winner_id else None
+        ),
         current_turn=format_player_name(
             game_state.turn_order[game_state.current_turn_index]
         ),
         property_owners=property_owners,
-        game_id=game_id
+        game_id=game_id,
     )
 
 
 @app.route("/")
 def home():
-    return render_template(
-        "home.html",
-        username=session.get("username")
-    )
+    return render_template("home.html", username=session.get("username"))
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -321,7 +329,9 @@ def register():
         password = request.form.get("password", "").strip()
 
         if not username or not password:
-            return render_template("register.html", error="Username and password are required.")
+            return render_template(
+                "register.html", error="Username and password are required."
+            )
 
         existing_user = User.query.filter_by(username=username).first()
 
@@ -329,8 +339,7 @@ def register():
             return render_template("register.html", error="Username already exists.")
 
         new_user = User(
-            username=username,
-            password_hash=generate_password_hash(password)
+            username=username, password_hash=generate_password_hash(password)
         )
 
         db.session.add(new_user)
@@ -368,6 +377,7 @@ def logout():
     session.clear()
     return redirect(url_for("home"))
 
+
 @app.route("/profile")
 def profile():
     if "username" not in session:
@@ -377,9 +387,17 @@ def profile():
 
     user = User.query.filter_by(username=username).first()
 
-    hosted_lobbies = Lobby.query.filter_by(host_name=username).order_by(Lobby.created_at.desc()).all()
+    hosted_lobbies = (
+        Lobby.query.filter_by(host_name=username)
+        .order_by(Lobby.created_at.desc())
+        .all()
+    )
 
-    joined_lobby_players = LobbyPlayer.query.filter_by(player_name=username).order_by(LobbyPlayer.joined_at.desc()).all()
+    joined_lobby_players = (
+        LobbyPlayer.query.filter_by(player_name=username)
+        .order_by(LobbyPlayer.joined_at.desc())
+        .all()
+    )
 
     joined_lobbies = [lobby_player.lobby for lobby_player in joined_lobby_players]
 
@@ -392,14 +410,15 @@ def profile():
         username=username,
         total_lobbies=total_lobbies,
         hosted_count=hosted_count,
-        joined_lobbies=joined_lobbies
+        joined_lobbies=joined_lobbies,
     )
+
 
 @app.route("/browser")
 def lobby_browser():
     if "username" not in session:
         return redirect(url_for("login"))
-    
+
     search_text = request.args.get("search", "").strip()
 
     query = Lobby.query
@@ -408,7 +427,7 @@ def lobby_browser():
         query = query.filter(
             db.or_(
                 Lobby.name.ilike(f"%{search_text}%"),
-                Lobby.host_name.ilike(f"%{search_text}%")
+                Lobby.host_name.ilike(f"%{search_text}%"),
             )
         )
 
@@ -421,11 +440,17 @@ def lobby_browser():
         lobbies=lobbies,
         search_text=search_text,
         online_players=12,
-        open_rooms=open_rooms
+        open_rooms=open_rooms,
     )
+
 
 @app.route("/browser/create", methods=["POST"])
 def create_browser_lobby():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
     lobby_name = request.form.get("lobby_name", "").strip()
     max_players = int(request.form.get("max_players", 4))
 
@@ -437,26 +462,23 @@ def create_browser_lobby():
     new_lobby = Lobby(
         name=lobby_name,
         lobby_type="public",
-        host_name="Player 1",
+        host_name=username,
         max_players=max_players,
         invite_code=Lobby.generate_invite_code(),
-        status="waiting"
+        status="waiting",
     )
 
     db.session.add(new_lobby)
     db.session.commit()
 
     host_player = LobbyPlayer(
-        lobby_id=new_lobby.id,
-        player_name="Player 1",
-        is_host=True,
-        is_ready=True
+        lobby_id=new_lobby.id, player_name=username, is_host=True, is_ready=True
     )
 
     welcome_message = LobbyMessage(
         lobby_id=new_lobby.id,
         sender_name="System",
-        message_text="Welcome to the lobby."
+        message_text="Welcome to the lobby.",
     )
 
     db.session.add(host_player)
@@ -468,6 +490,11 @@ def create_browser_lobby():
 
 @app.route("/browser/join/<int:lobby_id>", methods=["POST"])
 def join_browser_lobby(lobby_id):
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
     lobby = db.session.get(Lobby, lobby_id)
 
     if lobby is None:
@@ -482,16 +509,12 @@ def join_browser_lobby(lobby_id):
         return redirect(url_for("lobby_browser"))
 
     existing_player = LobbyPlayer.query.filter_by(
-        lobby_id=lobby.id,
-        player_name="Player 2"
+        lobby_id=lobby.id, player_name=username
     ).first()
 
     if existing_player is None:
         player = LobbyPlayer(
-            lobby_id=lobby.id,
-            player_name="Player 2",
-            is_host=False,
-            is_ready=False
+            lobby_id=lobby.id, player_name=username, is_host=False, is_ready=False
         )
         db.session.add(player)
 
@@ -505,13 +528,16 @@ def join_browser_lobby(lobby_id):
 
 @app.route("/browser/quick-join", methods=["POST"])
 def quick_join_lobby():
-    lobbies = Lobby.query.filter_by(status="waiting").order_by(Lobby.created_at.asc()).all()
+    lobbies = (
+        Lobby.query.filter_by(status="waiting").order_by(Lobby.created_at.asc()).all()
+    )
 
     for lobby in lobbies:
         if len(lobby.players) < lobby.max_players:
             return redirect(url_for("join_browser_lobby", lobby_id=lobby.id))
 
     return redirect(url_for("lobby_browser"))
+
 
 @app.route("/lobby/<int:lobby_id>")
 def lobby_page(lobby_id):
@@ -520,11 +546,23 @@ def lobby_page(lobby_id):
     if lobby is None:
         return redirect(url_for("lobby_browser"))
 
-    players = LobbyPlayer.query.filter_by(lobby_id=lobby.id).order_by(LobbyPlayer.joined_at.asc()).all()
-    messages = LobbyMessage.query.filter_by(lobby_id=lobby.id).order_by(LobbyMessage.created_at.asc()).all()
+    players = (
+        LobbyPlayer.query.filter_by(lobby_id=lobby.id)
+        .order_by(LobbyPlayer.joined_at.asc())
+        .all()
+    )
+    messages = (
+        LobbyMessage.query.filter_by(lobby_id=lobby.id)
+        .order_by(LobbyMessage.created_at.asc())
+        .all()
+    )
 
     player_count = len(players)
-    lobby_status = "All players are ready." if players and all(player.is_ready for player in players) else "Waiting for players..."
+    lobby_status = (
+        "All players are ready."
+        if players and all(player.is_ready for player in players)
+        else "Waiting for players..."
+    )
 
     return render_template(
         "waiting_lobby.html",
@@ -532,21 +570,24 @@ def lobby_page(lobby_id):
         players=players,
         messages=messages,
         player_count=player_count,
-        lobby_status=lobby_status
+        lobby_status=lobby_status,
     )
+
+
 @app.route("/lobby/<int:lobby_id>/ready", methods=["POST"])
 def toggle_lobby_ready(lobby_id):
+    if "username" not in session:
+      return redirect(url_for("login"))
+
+    username = session["username"]
+    
     player = LobbyPlayer.query.filter_by(
-        lobby_id=lobby_id,
-        player_name="Player 2"
+        lobby_id=lobby_id, player_name=username
     ).first()
 
     if player is None:
         player = LobbyPlayer(
-            lobby_id=lobby_id,
-            player_name="Player 2",
-            is_host=False,
-            is_ready=False
+            lobby_id=lobby_id, player_name=username, is_host=False, is_ready=False
         )
         db.session.add(player)
 
@@ -558,9 +599,14 @@ def toggle_lobby_ready(lobby_id):
 
 @app.route("/lobby/<int:lobby_id>/leave", methods=["POST"])
 def leave_lobby(lobby_id):
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
     player = LobbyPlayer.query.filter_by(
         lobby_id=lobby_id,
-        player_name="Player 2"
+        player_name=username
     ).first()
 
     if player:
@@ -572,12 +618,17 @@ def leave_lobby(lobby_id):
 
 @app.route("/lobby/<int:lobby_id>/chat", methods=["POST"])
 def lobby_chat(lobby_id):
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
     message_text = request.form.get("message", "").strip()
 
     if message_text:
         message = LobbyMessage(
             lobby_id=lobby_id,
-            sender_name="Player 2",
+            sender_name=username,
             message_text=message_text
         )
         db.session.add(message)
@@ -609,7 +660,6 @@ def start_lobby_game_from_lobby(lobby_id):
     return redirect(url_for("game_page", game_id=game_id))
 
 
-
 @app.route("/lobby/start", methods=["POST"])
 def start_lobby_game():
     global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, game_id
@@ -622,15 +672,16 @@ def start_lobby_game():
     game_over = False
     waiting_for_ai = False
     lobby_demo_state = {
-    "player2_ready": False,
-    "messages": [
-        {"sender": "System", "text": "Welcome to the lobby."},
-        {"sender": "System", "text": "Waiting for more players to join."},
-        {"sender": "Player 2", "text": "Ready when you are."}
-    ]
-}
+        "player2_ready": False,
+        "messages": [
+            {"sender": "System", "text": "Welcome to the lobby."},
+            {"sender": "System", "text": "Waiting for more players to join."},
+            {"sender": "Player 2", "text": "Ready when you are."},
+        ],
+    }
 
     return redirect(url_for("game_page", game_id=game_id))
+
 
 @app.route("/singleplayer")
 def singleplayer():
@@ -645,6 +696,7 @@ def singleplayer():
     waiting_for_ai = False
 
     return redirect(url_for("game_page", game_id=game_id))
+
 
 @app.route("/game/<game_id>")
 def game_page(game_id):
@@ -709,10 +761,7 @@ def buy_property():
             record_event(
                 "property_bought",
                 amount=tile.buy_price,
-                metadata={
-                    "player_id": "player1",
-                    "tile": tile.name
-                }
+                metadata={"player_id": "player1", "tile": tile.name},
             )
         else:
             game_log.append(f"Player 1 cannot buy {tile.name}.")
@@ -736,6 +785,7 @@ def skip_buy():
     waiting_for_ai = True
 
     return redirect(url_for("game_page", game_id=game_id))
+
 
 @app.route("/ai-turn", methods=["POST"])
 def ai_turn():
