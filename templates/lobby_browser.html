@@ -16,8 +16,8 @@
             <span class="navbar-brand mb-0 h1">🎲 Monopoly: Perth Edition</span>
 
             <div>
-                <button id="back-btn" class="btn btn-outline-light btn-sm me-2">Back</button>
-                <button id="logout-btn" class="btn btn-outline-light btn-sm">Logout</button>
+                <a id="back-btn" href="{{ url_for('home') }}" class="btn btn-outline-light btn-sm me-2">Back</a>
+                <a id="logout-btn" href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Logout</a>
             </div>
         </div>
     </nav>
@@ -67,12 +67,12 @@
                                 {% for lobby in lobbies %}
                                 <tr>
                                     <td>{{ lobby.name }}</td>
-                                    <td>{{ lobby.host }}</td>
+                                    <td>{{ lobby.host_name }}</td>
                                     <td>{{ lobby.players|length }} / {{ lobby.max_players }}</td>
                                     <td>
-                                        {% if lobby.status == "Full" %}
+                                        {% if lobby.status == "full" %}
                                         <span class="badge bg-secondary">Full</span>
-                                        {% elif lobby.status == "Starting Soon" %}
+                                        {% elif lobby.status == "starting_soon" %}
                                         <span class="badge bg-warning text-dark">Starting Soon</span>
                                         {% else %}
                                         <span class="badge bg-success">Waiting</span>
@@ -193,6 +193,7 @@
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='lobby_browser.js') }}"></script>
 </body>
 
 </html>

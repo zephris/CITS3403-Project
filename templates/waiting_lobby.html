@@ -24,7 +24,7 @@
                 <a href="{{ url_for('lobby_browser') }}" id="back-btn" class="btn btn-outline-light btn-sm me-2">
                     Back
                 </a>
-                <a href="{{ url_for('lobby_browser') }}" id="logout-btn" class="btn btn-outline-light btn-sm">
+                <a href="{{ url_for('logout') }}" id="logout-btn" class="btn btn-outline-light btn-sm">
                     Logout
                 </a>
             </div>
@@ -208,6 +208,7 @@
             });
     }, 2000);
 </script>
+<script src="{{ url_for('static', filename='waiting_lobby.js') }}"></script>
 </body>
 
 </html>

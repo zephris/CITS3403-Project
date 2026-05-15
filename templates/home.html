@@ -33,12 +33,12 @@
                  Register
               </a>
             {% endif %}
-            <a href="/browser" class="btn btn-primary btn-lg"><i class="fa-solid fa-users"></i>Multiplayer</a>
-            <a href="/singleplayer" class="btn btn-secondary btn-lg"><i class="fa-solid fa-user"></i>Single Player</a>
-            <a href="/profile" class="btn btn-outline-primary btn-lg"><i class="fa-solid fa-circle-user"></i>My
+            <a href="{{ url_for('lobby_browser') }}" class="btn btn-primary btn-lg"><i class="fa-solid fa-users"></i>Multiplayer</a>
+            <a href="{{ url_for('singleplayer') }}" class="btn btn-secondary btn-lg"><i class="fa-solid fa-user"></i>Single Player</a>
+            <a href="{{ url_for('profile') }}" class="btn btn-outline-primary btn-lg"><i class="fa-solid fa-circle-user"></i>My
                 Profile</a>
-            <a href="/settings" class="btn btn-outline-secondary btn-lg"><i class="fa-solid fa-gear"></i>Settings</a>
-            <a href="/credit" class="btn btn-dark btn-lg">Credit</a>
+            <a href="{{ url_for('settings') }}" class="btn btn-outline-secondary btn-lg"><i class="fa-solid fa-gear"></i>Settings</a>
+            <a href="{{ url_for('credit') }}" class="btn btn-dark btn-lg">Credit</a>
         </div>
     </div>
 </body>

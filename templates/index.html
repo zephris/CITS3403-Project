@@ -630,38 +630,7 @@
                                 </div>
                             {% endif %}
 
-                            {% if not waiting_for_ai and can_control_current_action and can_build_house %}
-                                <div class="mt-2 text-muted small">
-                                    {{ active_property_player_name }} landed on their own property again, so they can build one house now.
-                                </div>
-                                <div class="mt-2 d-flex gap-2 justify-content-center flex-wrap">
-                                    <form class="ajax-action-form" data-action-name="Building..." action="{{ url_for('build_house') }}" method="post">
-                                        <button type="submit" class="btn btn-success btn-sm">
-                                            🏠 Build House (${{ house_cost }})
-                                        </button>
-                                    </form>
-                                </div>
-                            {% endif %}
-
-                            {% if not waiting_for_ai and can_sell_house %}
-                                <div class="house-panel mt-2">
-                                    <strong>{{ active_property_player_name }} can sell houses to raise cash:</strong>
-                                    <form class="ajax-action-form mt-2" data-action-name="Selling..." action="{{ url_for('sell_house') }}" method="post">
-                                        <div class="d-flex gap-2 justify-content-center flex-wrap align-items-center">
-                                            <select name="tile_index" class="form-select form-select-sm" style="max-width: 280px;">
-                                                {% for house_property in sellable_house_properties %}
-                                                    <option value="{{ house_property.tile_index }}">
-                                                        {{ house_property.name }} — {{ house_property.houses }} house(s), +${{ house_property.sell_value }} each
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                            <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                                Sell 1 House
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            {% endif %}
+                            {# House and property management has been moved to the sidebar under Game Log. #}
 
                             <form action="{{ url_for('reset_game') }}" method="post" class="mt-2">
                                 <button type="submit" class="btn btn-outline-secondary btn-sm">
@@ -682,7 +651,7 @@
                 </div>
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
-                        <span>👤 Player 1 (You)</span>
+                        <span>👤 {{ current_player_name }} (You)</span>
                         <span class="badge bg-success rounded-pill">$ {{ money }}</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -709,6 +678,78 @@
                         <input type="text" class="form-control" placeholder="Type a message...">
                         <button class="btn btn-outline-secondary" type="button">Send</button>
                     </div>
+                </div>
+            </div>
+
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-success text-white fw-bold">
+                    🏠 Property Management
+                </div>
+                <div class="card-body">
+                    {% if can_buy and can_control_current_action %}
+                        <div class="alert alert-warning py-2 small mb-3">
+                            Choose <strong>Buy</strong> or <strong>Skip</strong> for {{ location }} before managing houses.
+                        </div>
+                    {% endif %}
+
+                    {% if can_build_house %}
+                        <p class="fw-semibold mb-2">Build houses on your properties:</p>
+                        <form class="ajax-action-form mb-3" data-action-name="Building..." action="{{ url_for('build_house') }}" method="post">
+                            <div class="d-flex gap-2 flex-wrap align-items-center">
+                                <select name="tile_index" class="form-select form-select-sm" style="max-width: 320px;">
+                                    {% for house_property in buildable_house_properties %}
+                                        <option value="{{ house_property.tile_index }}">
+                                            {{ house_property.name }} — {{ house_property.houses }}/{{ max_houses }} houses, build for ${{ house_property.cost }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    Build 1 House
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <p class="text-muted small mb-3">
+                            No house can be built right now. You need to own a property, have enough cash, and finish any Buy/Skip decision first.
+                        </p>
+                    {% endif %}
+
+                    {% if can_sell_house %}
+                        <p class="fw-semibold mb-2">Sell houses:</p>
+                        <form class="ajax-action-form mb-3" data-action-name="Selling..." action="{{ url_for('sell_house') }}" method="post">
+                            <div class="d-flex gap-2 flex-wrap align-items-center">
+                                <select name="tile_index" class="form-select form-select-sm" style="max-width: 320px;">
+                                    {% for house_property in sellable_house_properties %}
+                                        <option value="{{ house_property.tile_index }}">
+                                            {{ house_property.name }} — {{ house_property.houses }} house(s), sell for ${{ house_property.sell_value }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    Sell 1 House
+                                </button>
+                            </div>
+                        </form>
+                    {% endif %}
+
+                    {% if can_sell_property %}
+                        <p class="fw-semibold mb-2">Sell property back to bank:</p>
+                        <form class="ajax-action-form" data-action-name="Selling property..." action="{{ url_for('sell_property') }}" method="post">
+                            <div class="d-flex gap-2 flex-wrap align-items-center">
+                                <select name="tile_index" class="form-select form-select-sm" style="max-width: 320px;">
+                                    {% for property in sellable_properties %}
+                                        <option value="{{ property.tile_index }}">
+                                            {{ property.name }} — value ${{ property.sell_value }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    Sell Property
+                                </button>
+                            </div>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
 
@@ -930,7 +971,9 @@
     }
 
     function maybeRunAiTurn() {
-        if (!window.GAME_WAITING_FOR_AI) {
+        // Only the singleplayer mode has an AI turn.
+        // In LAN multiplayer the second turn must be played by the real Player 2 browser.
+        if (!window.GAME_WAITING_FOR_AI || window.GAME_MODE !== "singleplayer") {
             return;
         }
 
