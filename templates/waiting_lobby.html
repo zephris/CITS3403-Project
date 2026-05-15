@@ -11,6 +11,11 @@
 </head>
 
 <body>
+    {% if start_error %}
+    <script>
+        alert({{ start_error| tojson }});
+    </script>
+    {% endif %}
     <nav class="navbar navbar-dark bg-dark mb-4">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1">🎲 Monopoly: Perth Edition</span>
@@ -19,7 +24,7 @@
                 <a href="{{ url_for('lobby_browser') }}" id="back-btn" class="btn btn-outline-light btn-sm me-2">
                     Back
                 </a>
-                <a href="{{ url_for('lobby_browser') }}" id="logout-btn" class="btn btn-outline-light btn-sm">
+                <a href="{{ url_for('logout') }}" id="logout-btn" class="btn btn-outline-light btn-sm">
                     Logout
                 </a>
             </div>
@@ -117,21 +122,39 @@
                     </div>
 
                     <div class="card-body d-grid gap-3">
-                        <form action="{{ url_for('toggle_lobby_ready', lobby_id=lobby.id) }}" method="post">
-                            <button id="ready-btn" type="submit" class="btn btn-success w-100">
-                                Ready / Unready
+                        {% if is_host %}
+                        <form action="{{ url_for('start_lobby_game_from_lobby', lobby_id=lobby.id) }}" method="post">
+                            <button id="start-game-btn" type="submit" class="btn btn-primary w-100">
+                                Start Game
                             </button>
                         </form>
+
+                        {% if can_start_game %}
+                        <p class="text-success small mb-0">
+                            All players are ready. You can start the game.
+                        </p>
+                        {% else %}
+                        <p class="text-muted small mb-0">
+                            Waiting for the lobby to be full and all players to ready up.
+                        </p>
+                        {% endif %}
+                        {% else %}
+                        <form action="{{ url_for('toggle_lobby_ready', lobby_id=lobby.id) }}" method="post">
+                            {% if current_player.is_ready %}
+                            <button id="ready-btn" type="submit" class="btn btn-warning w-100">
+                                Unready
+                            </button>
+                            {% else %}
+                            <button id="ready-btn" type="submit" class="btn btn-success w-100">
+                                Ready
+                            </button>
+                            {% endif %}
+                        </form>
+                        {% endif %}
 
                         <form action="{{ url_for('leave_lobby', lobby_id=lobby.id) }}" method="post">
                             <button id="leave-lobby-btn" type="submit" class="btn btn-danger w-100">
                                 Leave Lobby
-                            </button>
-                        </form>
-
-                        <form action="{{ url_for('start_lobby_game_from_lobby', lobby_id=lobby.id) }}" method="post">
-                            <button id="start-game-btn" type="submit" class="btn btn-primary w-100">
-                                Start Game
                             </button>
                         </form>
                     </div>
@@ -169,7 +192,23 @@
         </div>
     </div>
 
-
+<script>
+    setInterval(function () {
+        fetch("{{ url_for('lobby_status', lobby_id=lobby.id) }}")
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (data) {
+                if (data.status === "in_game" && data.game_url) {
+                    window.location.href = data.game_url;
+                }
+            })
+            .catch(function (error) {
+                console.log("Lobby status check failed:", error);
+            });
+    }, 2000);
+</script>
+<script src="{{ url_for('static', filename='waiting_lobby.js') }}"></script>
 </body>
 
 </html>
