@@ -1,5 +1,6 @@
-from flask import Flask, render_template, redirect, url_for, request
-from models import db, Lobby, LobbyPlayer, LobbyMessage
+from flask import Flask, render_template, redirect, url_for, request, session, jsonify
+from werkzeug.security import generate_password_hash, check_password_hash
+from models import db, User, Lobby, LobbyPlayer, LobbyMessage
 from template.backend.app.game_logic.engine import load_game_config, GameEngine
 import random
 
@@ -305,7 +306,72 @@ def render_game_page(dice_result=None):
 
 @app.route("/")
 def home():
-    return render_template("home.html")
+    return render_template(
+        "home.html",
+        username=session.get("username")
+    )
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+
+        if not username or not password:
+            return render_template(
+                "register.html",
+                error="Username and password are required."
+            )
+
+        existing_user = User.query.filter_by(username=username).first()
+
+        if existing_user:
+            return render_template(
+                "register.html",
+                error="Username already exists."
+            )
+
+        new_user = User(
+            username=username,
+            password_hash=generate_password_hash(password)
+        )
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        session["user_id"] = new_user.id
+        session["username"] = new_user.username
+
+        return redirect(url_for("home"))
+
+    return render_template("register.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+
+        user = User.query.filter_by(username=username).first()
+
+        if user is None or not check_password_hash(user.password_hash, password):
+            return render_template(
+                "login.html",
+                error="Invalid username or password."
+            )
+
+        session["user_id"] = user.id
+        session["username"] = user.username
+
+        return redirect(url_for("home"))
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("home"))
 
 @app.route("/browser")
 def lobby_browser():
@@ -335,6 +401,11 @@ def lobby_browser():
 
 @app.route("/browser/create", methods=["POST"])
 def create_browser_lobby():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
     lobby_name = request.form.get("lobby_name", "").strip()
     lobby_type = request.form.get("lobby_type", "public")
     max_players = int(request.form.get("max_players", 4))
@@ -353,7 +424,7 @@ def create_browser_lobby():
         host_name=username,
         max_players=max_players,
         invite_code=Lobby.generate_invite_code(),
-        status="waiting"
+        status="waiting",
     )
 
     db.session.add(new_lobby)
@@ -381,36 +452,38 @@ def create_browser_lobby():
 
 @app.route("/browser/join/<int:lobby_id>", methods=["POST"])
 def join_browser_lobby(lobby_id):
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
     lobby = db.session.get(Lobby, lobby_id)
 
     if lobby is None:
         return redirect(url_for("lobby_browser"))
 
-    if lobby.status != "waiting":
-        return redirect(url_for("lobby_browser"))
-
-    if len(lobby.players) >= lobby.max_players:
-        lobby.status = "full"
-        db.session.commit()
+    if lobby.status == "in_game":
         return redirect(url_for("lobby_browser"))
 
     existing_player = LobbyPlayer.query.filter_by(
         lobby_id=lobby.id,
-        player_name="Player 2"
+        player_name=username
     ).first()
 
-    if existing_player is None:
-        player = LobbyPlayer(
-            lobby_id=lobby.id,
-            player_name="Player 2",
-            is_host=False,
-            is_ready=False
-        )
-        db.session.add(player)
+    if existing_player is not None:
+        return redirect(url_for("lobby_page", lobby_id=lobby.id))
 
-    if len(lobby.players) + 1 >= lobby.max_players:
-        lobby.status = "full"
+    if len(lobby.players) >= lobby.max_players:
+        return redirect(url_for("lobby_browser"))
 
+    player = LobbyPlayer(
+        lobby_id=lobby.id,
+        player_name=username,
+        is_host=False,
+        is_ready=False
+    )
+
+    db.session.add(player)
     db.session.commit()
 
     return redirect(url_for("lobby_page", lobby_id=lobby.id))
@@ -497,6 +570,29 @@ def lobby_page(lobby_id):
         lobby_status=lobby_status,
         start_error=start_error
     )
+
+@app.route("/lobby/<int:lobby_id>/status")
+def lobby_status(lobby_id):
+    lobby = db.session.get(Lobby, lobby_id)
+
+    if lobby is None:
+        return jsonify({
+            "exists": False,
+            "status": "not_found",
+            "game_url": None
+        })
+
+    game_url = None
+
+    if lobby.status == "in_game":
+        game_url = url_for("game_page", game_id=f"lobby_{lobby.id}_game")
+
+    return jsonify({
+        "exists": True,
+        "status": lobby.status,
+        "game_url": game_url
+    })
+
 @app.route("/lobby/<int:lobby_id>/ready", methods=["POST"])
 def toggle_lobby_ready(lobby_id):
     if "username" not in session:
@@ -565,6 +661,9 @@ def start_lobby_game_from_lobby(lobby_id):
     if lobby is None:
         return redirect(url_for("lobby_browser"))
 
+    if lobby.status == "in_game":
+        return redirect(url_for("game_page", game_id=f"lobby_{lobby.id}_game"))
+    
     players_in_lobby = LobbyPlayer.query.filter_by(
         lobby_id=lobby.id
     ).all()
@@ -635,6 +734,29 @@ def start_lobby_game():
 }
 
     return redirect(url_for("game_page", game_id=game_id))
+
+@app.route("/game/<game_id>/state")
+def game_state_status(game_id):
+    player = get_player()
+    tile = get_current_tile()
+    ai_player = game_state.players["ai_1"]
+
+    return jsonify({
+        "game_id": game_id,
+        "player_position": player.pos,
+        "player_money": player.cash,
+        "ai_position": ai_player.pos,
+        "ai_money": ai_player.cash,
+        "location": tile.name,
+        "can_buy": can_buy,
+        "game_over": game_over,
+        "waiting_for_ai": waiting_for_ai,
+        "current_turn": format_player_name(
+            game_state.turn_order[game_state.current_turn_index]
+        ),
+        "winner": format_player_name(game_state.winner_id) if game_state.winner_id else None,
+        "game_log": game_log,
+    })
 
 @app.route("/game/<game_id>")
 def game_page(game_id):
