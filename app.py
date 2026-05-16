@@ -977,26 +977,62 @@ def toggle_lobby_ready(lobby_id):
 
 @app.route("/lobby/<int:lobby_id>/leave", methods=["POST"])
 def leave_lobby(lobby_id):
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
+    lobby = db.session.get(Lobby, lobby_id)
+    if lobby is None:
+        return redirect(url_for("lobby_browser"))
+
     player = LobbyPlayer.query.filter_by(
         lobby_id=lobby_id,
-        player_name="Player 2"
+        player_name=username
     ).first()
 
-    if player:
-        db.session.delete(player)
+    if player is None:
+        return redirect(url_for("lobby_browser"))
+
+    was_host = player.is_host
+    db.session.delete(player)
+
+    remaining_players = LobbyPlayer.query.filter_by(
+        lobby_id=lobby_id
+    ).order_by(LobbyPlayer.joined_at.asc()).all()
+
+    if not remaining_players:
+        db.session.delete(lobby)
         db.session.commit()
+        return redirect(url_for("lobby_browser"))
+
+    if was_host:
+        new_host = remaining_players[0]
+        new_host.is_host = True
+        lobby.host_name = new_host.player_name
+        db.session.add(LobbyMessage(
+            lobby_id=lobby.id,
+            sender_name="System",
+            message_text=f"{new_host.player_name} is now the host."
+        ))
+
+    db.session.commit()
 
     return redirect(url_for("lobby_browser"))
 
 
 @app.route("/lobby/<int:lobby_id>/chat", methods=["POST"])
 def lobby_chat(lobby_id):
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
     message_text = request.form.get("message", "").strip()
 
     if message_text:
         message = LobbyMessage(
             lobby_id=lobby_id,
-            sender_name="Player 2",
+            sender_name=username,
             message_text=message_text
         )
         db.session.add(message)
