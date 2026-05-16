@@ -199,6 +199,11 @@
                 return response.json();
             })
             .then(function (data) {
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                    return;
+                }
+
                 if (data.status === "in_game" && data.game_url) {
                     window.location.href = data.game_url;
                 }

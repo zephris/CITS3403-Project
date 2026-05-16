@@ -404,6 +404,28 @@ def is_ajax_request():
 def current_game_mode():
     return "singleplayer" if is_singleplayer_mode() else "multiplayer"
 
+def get_lobby_id_from_game_id(game_id_value):
+    game_id_text = str(game_id_value)
+
+    if not game_id_text.startswith("lobby_") or not game_id_text.endswith("_game"):
+        return None
+
+    lobby_id_text = game_id_text.replace("lobby_", "").replace("_game", "")
+
+    try:
+        return int(lobby_id_text)
+    except ValueError:
+        return None
+
+
+def get_lobby_from_game_id(game_id_value):
+    lobby_id = get_lobby_id_from_game_id(game_id_value)
+
+    if lobby_id is None:
+        return None
+
+    return db.session.get(Lobby, lobby_id)
+
 
 def get_restart_required_count():
     if current_game_mode() == "multiplayer":
@@ -754,7 +776,7 @@ def credit():
 def lobby_browser():
     search_text = request.args.get("search", "").strip()
 
-    query = Lobby.query
+    query = Lobby.query.filter(Lobby.status != "in_game")
 
     if search_text:
         query = query.filter(
@@ -956,7 +978,8 @@ def lobby_status(lobby_id):
         return jsonify({
             "exists": False,
             "status": "not_found",
-            "game_url": None
+            "game_url": None,
+            "redirect_url": url_for("lobby_browser")
         })
 
     game_url = None
@@ -967,7 +990,8 @@ def lobby_status(lobby_id):
     return jsonify({
         "exists": True,
         "status": lobby.status,
-        "game_url": game_url
+        "game_url": game_url,
+        "redirect_url": None
     })
 
 @app.route("/lobby/<int:lobby_id>/ready", methods=["POST"])
@@ -996,26 +1020,59 @@ def toggle_lobby_ready(lobby_id):
 
 @app.route("/lobby/<int:lobby_id>/leave", methods=["POST"])
 def leave_lobby(lobby_id):
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
+    lobby = db.session.get(Lobby, lobby_id)
+
+    if lobby is None:
+        return redirect(url_for("lobby_browser"))
+
     player = LobbyPlayer.query.filter_by(
         lobby_id=lobby_id,
-        player_name="Player 2"
+        player_name=username
     ).first()
 
-    if player:
-        db.session.delete(player)
+    if player is None:
+        return redirect(url_for("lobby_browser"))
+
+    if player.is_host:
+        db.session.delete(lobby)
         db.session.commit()
+        return redirect(url_for("lobby_browser"))
+
+    db.session.delete(player)
+
+    remaining_players = LobbyPlayer.query.filter_by(
+        lobby_id=lobby.id
+    ).all()
+
+    for remaining_player in remaining_players:
+        if not remaining_player.is_host:
+            remaining_player.is_ready = False
+
+    lobby.status = "waiting"
+
+    db.session.commit()
 
     return redirect(url_for("lobby_browser"))
 
 
 @app.route("/lobby/<int:lobby_id>/chat", methods=["POST"])
 def lobby_chat(lobby_id):
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
     message_text = request.form.get("message", "").strip()
 
     if message_text:
         message = LobbyMessage(
             lobby_id=lobby_id,
-            sender_name="Player 2",
+            sender_name=username,
             message_text=message_text
         )
         db.session.add(message)
@@ -1133,6 +1190,20 @@ def start_lobby_game():
 
 @app.route("/game/<game_id>/state")
 def game_state_status(game_id):
+    lobby = get_lobby_from_game_id(game_id)
+
+    if lobby is None and str(game_id).startswith("lobby_"):
+        return jsonify({
+            "ok": True,
+            "redirect_url": url_for("lobby_browser")
+        })
+
+    if lobby is not None and lobby.status != "in_game":
+        return jsonify({
+            "ok": True,
+            "redirect_url": url_for("lobby_page", lobby_id=lobby.id)
+        })
+
     player = get_visible_player()
     tile = get_visible_tile()
     second_player_id = get_other_player_id()
@@ -1189,6 +1260,47 @@ def game_state_status(game_id):
         "state_signature": state_signature,
         "html": render_game_html(),
     })
+
+@app.route("/game/<game_id>/leave", methods=["POST"])
+def leave_game_room(game_id):
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
+    lobby = get_lobby_from_game_id(game_id)
+
+    if lobby is None:
+        return redirect(url_for("lobby_browser"))
+
+    player = LobbyPlayer.query.filter_by(
+        lobby_id=lobby.id,
+        player_name=username
+    ).first()
+
+    if player is None:
+        return redirect(url_for("lobby_browser"))
+
+    if player.is_host:
+        db.session.delete(lobby)
+        db.session.commit()
+        return redirect(url_for("lobby_browser"))
+
+    db.session.delete(player)
+
+    remaining_players = LobbyPlayer.query.filter_by(
+        lobby_id=lobby.id
+    ).all()
+
+    for remaining_player in remaining_players:
+        if not remaining_player.is_host:
+            remaining_player.is_ready = False
+
+    lobby.status = "waiting"
+
+    db.session.commit()
+
+    return redirect(url_for("lobby_browser"))
 
 
 @app.route("/game/<game_id>")

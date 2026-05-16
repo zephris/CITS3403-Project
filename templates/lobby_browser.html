@@ -70,7 +70,9 @@
                                     <td>{{ lobby.host_name }}</td>
                                     <td>{{ lobby.players|length }} / {{ lobby.max_players }}</td>
                                     <td>
-                                        {% if lobby.status == "full" %}
+                                        {% if lobby.status == "in_game" %}
+                                        <span class="badge bg-dark">In Game</span>
+                                        {% elif lobby.players|length >= lobby.max_players %}
                                         <span class="badge bg-secondary">Full</span>
                                         {% elif lobby.status == "starting_soon" %}
                                         <span class="badge bg-warning text-dark">Starting Soon</span>
@@ -79,7 +81,11 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if lobby.players|length >= lobby.max_players %}
+                                        {% if lobby.status == "in_game" %}
+                                        <button class="btn btn-sm btn-dark" disabled>
+                                            In Game
+                                        </button>
+                                        {% elif lobby.players|length >= lobby.max_players %}
                                         <button class="btn btn-sm btn-secondary" disabled>
                                             Full
                                         </button>
@@ -135,65 +141,59 @@
 
         </div>
     </div>
-<div class="modal fade" id="createLobbyModal" tabindex="-1" aria-labelledby="createLobbyModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="{{ url_for('create_browser_lobby') }}" method="post">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="createLobbyModalLabel">Create New Lobby</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="lobby-name-input" class="form-label">Room Name</label>
-                        <input
-                            id="lobby-name-input"
-                            name="lobby_name"
-                            type="text"
-                            class="form-control"
-                            placeholder="Enter room name"
-                            maxlength="80"
-                            required
-                        >
+    <div class="modal fade" id="createLobbyModal" tabindex="-1" aria-labelledby="createLobbyModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('create_browser_lobby') }}" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createLobbyModalLabel">Create New Lobby</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="lobby-type-select" class="form-label">Lobby Type</label>
-                        <select id="lobby-type-select" name="lobby_type" class="form-select">
-                            <option value="public" selected>Public - visible in lobby browser</option>
-                            <option value="private">Private - join by room code</option>
-                        </select>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="lobby-name-input" class="form-label">Room Name</label>
+                            <input id="lobby-name-input" name="lobby_name" type="text" class="form-control"
+                                placeholder="Enter room name" maxlength="80" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="lobby-type-select" class="form-label">Lobby Type</label>
+                            <select id="lobby-type-select" name="lobby_type" class="form-select">
+                                <option value="public" selected>Public - visible in lobby browser</option>
+                                <option value="private">Private - join by room code</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="max-players-select" class="form-label">Max Players</label>
+                            <select id="max-players-select" name="max_players" class="form-select">
+                                <option value="2">2 Players</option>
+                                <option value="3">3 Players</option>
+                                <option value="4" selected>4 Players</option>
+                            </select>
+                        </div>
+
+                        <p class="text-muted small mb-0">
+                            A room code will be generated automatically after the lobby is created.
+                        </p>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="max-players-select" class="form-label">Max Players</label>
-                        <select id="max-players-select" name="max_players" class="form-select">
-                            <option value="2">2 Players</option>
-                            <option value="3">3 Players</option>
-                            <option value="4" selected>4 Players</option>
-                        </select>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            Create Lobby
+                        </button>
                     </div>
-
-                    <p class="text-muted small mb-0">
-                        A room code will be generated automatically after the lobby is created.
-                    </p>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-success">
-                        Create Lobby
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='lobby_browser.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='lobby_browser.js') }}"></script>
 </body>
 
 </html>
