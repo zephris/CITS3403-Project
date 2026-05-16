@@ -923,6 +923,8 @@ def credit():
 @app.route("/browser")
 def lobby_browser():
     search_text = request.args.get("search", "").strip()
+    quick_join_error = request.args.get("quick_join_error")
+    create_lobby_error = request.args.get("create_lobby_error")
 
     query = Lobby.query.filter(Lobby.status != "in_game")
 
@@ -942,6 +944,8 @@ def lobby_browser():
         "lobby_browser.html",
         lobbies=lobbies,
         search_text=search_text,
+        quick_join_error=quick_join_error,
+        create_lobby_error=create_lobby_error,
         online_players=12,
         open_rooms=open_rooms
     )
@@ -959,6 +963,17 @@ def create_browser_lobby():
 
     if not lobby_name:
         lobby_name = f"{username}'s Lobby"
+
+    existing_lobby = Lobby.query.filter(
+        db.func.lower(Lobby.name) == lobby_name.lower(),
+        Lobby.status != "in_game"
+    ).first()
+
+    if existing_lobby is not None:
+        return redirect(url_for(
+            "lobby_browser",
+            create_lobby_error=f'Room name "{lobby_name}" is already taken. Please choose another name.'
+        ))
 
     if lobby_type not in ["public", "private"]:
         lobby_type = "public"
@@ -1038,13 +1053,58 @@ def join_browser_lobby(lobby_id):
 
 @app.route("/browser/quick-join", methods=["POST"])
 def quick_join_lobby():
-    lobbies = Lobby.query.filter_by(status="waiting").order_by(Lobby.created_at.asc()).all()
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
+    lobbies = (
+        Lobby.query
+        .filter_by(status="waiting")
+        .order_by(Lobby.created_at.asc())
+        .all()
+    )
+
+    available_lobbies = []
 
     for lobby in lobbies:
-        if len(lobby.players) < lobby.max_players:
-            return redirect(url_for("join_browser_lobby", lobby_id=lobby.id))
+        existing_player = LobbyPlayer.query.filter_by(
+            lobby_id=lobby.id,
+            player_name=username
+        ).first()
 
-    return redirect(url_for("lobby_browser"))
+        if existing_player is not None:
+            return redirect(url_for("lobby_page", lobby_id=lobby.id))
+
+        if len(lobby.players) < lobby.max_players:
+            available_lobbies.append(lobby)
+
+    if not available_lobbies:
+        return redirect(url_for(
+            "lobby_browser",
+            quick_join_error="No available lobby was found. Please create a lobby or wait for another room to open."
+        ))
+
+    selected_lobby = random.choice(available_lobbies)
+
+    player = LobbyPlayer(
+        lobby_id=selected_lobby.id,
+        player_name=username,
+        is_host=False,
+        is_ready=False
+    )
+
+    message = LobbyMessage(
+        lobby_id=selected_lobby.id,
+        sender_name="System",
+        message_text=f"{username} joined the lobby using Quick Join."
+    )
+
+    db.session.add(player)
+    db.session.add(message)
+    db.session.commit()
+
+    return redirect(url_for("lobby_page", lobby_id=selected_lobby.id))
 
 @app.route("/lobby/<int:lobby_id>")
 def lobby_page(lobby_id):
