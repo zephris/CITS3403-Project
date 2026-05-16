@@ -11,6 +11,8 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False, unique=True)
     password_hash = db.Column(db.String(255), nullable=False)
+    bio = db.Column(db.String(300), nullable=False, default="Monopoly Perth player")
+    profile_public = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 class Lobby(db.Model):

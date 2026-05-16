@@ -67,7 +67,12 @@
                                 {% for lobby in lobbies %}
                                 <tr>
                                     <td>{{ lobby.name }}</td>
-                                    <td>{{ lobby.host_name }}</td>
+                                    <td>
+                                        <a href="{{ url_for('public_profile', username=lobby.host_name) }}"
+                                            class="text-decoration-none fw-bold">
+                                            {{ lobby.host_name }}
+                                        </a>
+                                    </td>
                                     <td>{{ lobby.players|length }} / {{ lobby.max_players }}</td>
                                     <td>
                                         {% if lobby.status == "in_game" %}

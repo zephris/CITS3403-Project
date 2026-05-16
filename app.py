@@ -881,26 +881,120 @@ def logout():
     return redirect(url_for("home"))
 
 
-@app.route("/profile")
+@app.route("/profile", methods=["GET", "POST"])
 def profile():
     if "username" not in session:
         return redirect(url_for("login"))
 
     username = session["username"]
 
-    total_lobbies = LobbyPlayer.query.filter_by(player_name=username).count()
+    user = User.query.filter_by(username=username).first()
+
+    if user is None:
+        session.clear()
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        bio = request.form.get("bio", "").strip()
+        profile_public = request.form.get("profile_public") == "on"
+
+        if not bio:
+            bio = "Monopoly Perth player"
+
+        user.bio = bio[:300]
+        user.profile_public = profile_public
+        db.session.commit()
+
+        return redirect(url_for("profile"))
+
+    joined_lobby_players = (
+        LobbyPlayer.query
+        .filter_by(player_name=username)
+        .order_by(LobbyPlayer.joined_at.desc())
+        .all()
+    )
+
+    joined_lobbies = [
+        lobby_player.lobby
+        for lobby_player in joined_lobby_players
+        if lobby_player.lobby is not None
+    ]
+
+    total_lobbies = len(joined_lobbies)
+
+    hosted_count = LobbyPlayer.query.filter_by(
+        player_name=username,
+        is_host=True
+    ).count()
+
+    games_won = 0
+    win_rate = 0
+
+    return render_template(
+        "profile.html",
+        user=user,
+        username=username,
+        total_lobbies=total_lobbies,
+        hosted_count=hosted_count,
+        games_won=games_won,
+        win_rate=win_rate,
+        joined_lobbies=joined_lobbies
+    )
+
+
+@app.route("/users/<username>")
+def public_profile(username):
+    target_user = User.query.filter_by(username=username).first()
+
+    if target_user is None:
+        return render_template(
+            "simple_page.html",
+            title="User Not Found",
+            message="This user profile does not exist."
+        )
+
+    if session.get("username") == username:
+        return redirect(url_for("profile"))
+
+    bio = getattr(target_user, "bio", "Monopoly Perth player")
+    profile_public = getattr(target_user, "profile_public", True)
+
+    if not profile_public:
+        return render_template(
+            "simple_page.html",
+            title="Private Profile",
+            message="This user's profile is private."
+        )
+
+    joined_lobby_players = (
+        LobbyPlayer.query
+        .filter_by(player_name=username)
+        .order_by(LobbyPlayer.joined_at.desc())
+        .all()
+    )
+
+    joined_lobbies = [
+        lobby_player.lobby
+        for lobby_player in joined_lobby_players
+        if lobby_player.lobby is not None
+    ]
+
+    total_lobbies = len(joined_lobbies)
+
     hosted_count = LobbyPlayer.query.filter_by(
         player_name=username,
         is_host=True
     ).count()
 
     return render_template(
-        "profile.html",
-        username=username,
+        "public_profile.html",
+        viewed_user=target_user,
+        viewed_username=username,
+        bio=bio,
         total_lobbies=total_lobbies,
-        hosted_count=hosted_count
+        hosted_count=hosted_count,
+        joined_lobbies=joined_lobbies
     )
-
 
 @app.route("/settings")
 def settings():
