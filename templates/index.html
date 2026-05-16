@@ -545,7 +545,7 @@
                             {% if not game_over %}
                                 {% if waiting_for_ai %}
                                     <div class="turn-status mt-4">
-                                        <span class="status-icon">{{ second_player_icon }}</span> {{ second_player_name }} is taking a turn...
+                                        <span class="status-icon">{{ active_player_icon }}</span> {{ active_player_name }} is taking a turn...
                                     </div>
                                     <div id="dice-animation" class="dice-stage" aria-live="polite">
                                         <div id="dice-one" class="dice-face">⚀</div>
@@ -650,14 +650,19 @@
                     🏆 Leaderboard
                 </div>
                 <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
-                        <span>👤 {{ current_player_name }} (You)</span>
-                        <span class="badge bg-success rounded-pill">$ {{ money }}</span>
+                    {% for player_entry in players %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center {% if player_entry.is_current_user %}bg-light{% endif %}">
+                        <span>
+                            {{ player_entry.icon }} {{ player_entry.name }}
+                            {% if player_entry.is_current_user %}
+                            (You)
+                            {% endif %}
+                        </span>
+                        <span class="badge {% if player_entry.is_current_user %}bg-success{% else %}bg-secondary{% endif %} rounded-pill">
+                            $ {{ player_entry.money }}
+                        </span>
                     </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{{ second_player_icon }} {{ second_player_name }}</span>
-                        <span class="badge bg-secondary rounded-pill">$ {{ ai_money }}</span>
-                    </li>
+                    {% endfor %}
                 </ul>
             </div>
 
@@ -757,6 +762,7 @@
     </div>
 </div>
 <script id="property-house-data" type="application/json">{{ property_houses_json|safe }}</script>
+<script id="token-data" type="application/json">{{ tokens_by_tile_json|safe }}</script>
 <script>
     window.GAME_WAITING_FOR_AI = document.body.dataset.waitingForAi === "true";
     window.GAME_MODE = document.body.dataset.gameMode || "singleplayer";
@@ -808,6 +814,40 @@
         });
     }
 
+    function getTokenData() {
+        const dataScript = document.getElementById("token-data");
+        if (!dataScript) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(dataScript.textContent || "{}");
+        } catch (error) {
+            return {};
+        }
+    }
+
+    function renderTokens() {
+        document.querySelectorAll(".player-token, .ai-token, .token").forEach(function (element) {
+            element.remove();
+        });
+
+        const tokensByTile = getTokenData();
+        Object.keys(tokensByTile).forEach(function (position) {
+            const tile = document.querySelector('[data-tile-position="' + position + '"]');
+            if (!tile) {
+                return;
+            }
+
+            tokensByTile[position].forEach(function (token) {
+                const marker = document.createElement("div");
+                marker.className = "token token-slot-" + token.slot + " " + (token.is_ai ? "token-ai" : "token-human");
+                marker.textContent = token.icon;
+                tile.appendChild(marker);
+            });
+        });
+    }
+
     function getDiceElements() {
         return {
             stage: document.getElementById("dice-animation"),
@@ -839,7 +879,14 @@
             currentHouseData.textContent = newHouseData.textContent;
         }
 
+        const newTokenData = newDocument.getElementById("token-data");
+        const currentTokenData = document.getElementById("token-data");
+        if (newTokenData && currentTokenData) {
+            currentTokenData.textContent = newTokenData.textContent;
+        }
+
         renderHouseMarkers();
+        renderTokens();
 
         window.GAME_WAITING_FOR_AI =
             newDocument.body && newDocument.body.dataset.waitingForAi === "true";
@@ -869,7 +916,7 @@
         dice.stage.classList.remove("d-none", "dice-final");
         dice.stage.classList.add("rolling");
         dice.message.classList.remove("d-none");
-        dice.message.innerText = actor === "ai" ? "{{ second_player_name }} is rolling..." : "Rolling...";
+        dice.message.innerText = actor === "ai" ? "{{ active_player_name }} is rolling..." : "Rolling...";
 
         const rollingTimer = setInterval(function () {
             dice.one.innerText = diceFaces[randomDie()];
@@ -999,6 +1046,7 @@
             second_player_position: data.second_player_position,
             money: data.money,
             second_player_money: data.second_player_money,
+            players: data.players || [],
             game_log_count: data.game_log_count
         });
     }
@@ -1063,6 +1111,7 @@
     }
 
     renderHouseMarkers();
+    renderTokens();
     setupRollForm();
     setupActionForms();
     maybeRunAiTurn();

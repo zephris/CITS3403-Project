@@ -307,7 +307,8 @@ body::before {
 
 /* Tokens */
 .player-token,
-.ai-token {
+.ai-token,
+.token {
     position: absolute;
     width: 31px;
     height: 31px;
@@ -334,6 +335,34 @@ body::before {
     left: 4px;
     top: 4px;
     border: 3px solid var(--ai);
+}
+
+.token-human {
+    border: 3px solid var(--player);
+}
+
+.token-ai {
+    border: 3px solid var(--ai);
+}
+
+.token-slot-1 {
+    left: 4px;
+    top: 4px;
+}
+
+.token-slot-2 {
+    right: 4px;
+    top: 4px;
+}
+
+.token-slot-3 {
+    left: 4px;
+    bottom: 4px;
+}
+
+.token-slot-4 {
+    right: 4px;
+    bottom: 4px;
 }
 
 /* Sidebar */
@@ -642,7 +671,8 @@ html { scroll-behavior: smooth; }
     }
 
     .player-token,
-    .ai-token {
+    .ai-token,
+    .token {
         width: 22px;
         height: 22px;
         font-size: 0.8rem;

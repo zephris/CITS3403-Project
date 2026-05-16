@@ -497,6 +497,30 @@ def build_game_template_context(dice_result=None):
     second_player_id = get_other_player_id()
     second_player = game_state.players.get(second_player_id, player)
 
+    player_ids = game_state.turn_order or list(game_state.players.keys())
+    human_icons = ["🧍", "👤", "🧑", "🧑\u200d💼"]
+    human_index = 0
+    players = []
+
+    for player_id in player_ids:
+        game_player = game_state.players[player_id]
+        is_ai = player_id.startswith("ai")
+        if is_ai:
+            icon = "🤖"
+        else:
+            icon = human_icons[human_index % len(human_icons)]
+            human_index += 1
+
+        players.append({
+            "player_id": player_id,
+            "name": game_player.name,
+            "money": game_player.cash,
+            "position": game_player.pos,
+            "is_ai": is_ai,
+            "icon": icon,
+            "is_current_user": player_id == current_user_player_id,
+        })
+
     active_tile = get_pending_buy_tile() or get_active_tile()
     property_price = 0
     owner = None
@@ -513,6 +537,20 @@ def build_game_template_context(dice_result=None):
     active_info = get_active_property_info()
     active_player_id = get_active_player_id()
     is_current_user_turn = current_user_can_act()
+    active_player = game_state.players.get(active_player_id)
+    active_player_icon = next(
+        (entry["icon"] for entry in players if entry["player_id"] == active_player_id),
+        "🧍"
+    )
+
+    tokens_by_tile = {}
+    for slot_index, player_entry in enumerate(players, start=1):
+        position_key = str(player_entry["position"])
+        tokens_by_tile.setdefault(position_key, []).append({
+            "icon": player_entry["icon"],
+            "slot": slot_index,
+            "is_ai": player_entry["is_ai"],
+        })
 
     return {
         "position": player.pos,
@@ -539,6 +577,10 @@ def build_game_template_context(dice_result=None):
         "second_player_icon": "🤖" if current_game_mode() == "singleplayer" else "👥",
         "second_player_name": format_player_name(second_player_id),
         "property_houses_json": json.dumps(property_houses),
+        "tokens_by_tile_json": json.dumps(tokens_by_tile),
+        "players": players,
+        "active_player_name": active_player.name if active_player else "Player",
+        "active_player_icon": active_player_icon,
         "house_count": active_info["house_count"],
         "max_houses": MAX_HOUSES_PER_PROPERTY,
         "house_cost": HOUSE_COST,
@@ -854,19 +896,19 @@ def lobby_page(lobby_id):
         if not player.is_host
     ]
 
-    lobby_is_full = player_count == lobby.max_players
+    minimum_players = 2
     non_host_players_ready = all(
         player.is_ready for player in non_host_players
     )
 
     can_start_game = (
         is_host
-        and lobby_is_full
+        and player_count >= minimum_players
         and non_host_players_ready
     )
 
-    if player_count < lobby.max_players:
-        lobby_status = f"Waiting for players... {player_count} / {lobby.max_players}"
+    if player_count < minimum_players:
+        lobby_status = f"Waiting for players... {player_count} / {minimum_players}"
     elif not non_host_players_ready:
         lobby_status = "Waiting for all players to ready up..."
     else:
@@ -996,11 +1038,12 @@ def start_lobby_game_from_lobby(lobby_id):
     if not current_player.is_host:
         return redirect(url_for("lobby_page", lobby_id=lobby.id))
 
-    if len(players_in_lobby) < lobby.max_players:
+    minimum_players = 2
+    if len(players_in_lobby) < minimum_players:
         return redirect(url_for(
             "lobby_page",
             lobby_id=lobby.id,
-            start_error=f"The lobby is not full yet. Need {lobby.max_players} players."
+            start_error=f"At least {minimum_players} human players are required to start."
         ))
 
     non_host_players = [
@@ -1025,12 +1068,28 @@ def start_lobby_game_from_lobby(lobby_id):
         key=lambda lobby_player: lobby_player.joined_at
     )
 
-    # The current board UI supports two visible players.
-    # In LAN multiplayer player2 must be the real second browser user, not ai_1.
-    current_game_players = [
-        {"player_id": "player1", "name": ordered_lobby_players[0].player_name},
-        {"player_id": "player2", "name": ordered_lobby_players[1].player_name},
-    ]
+    current_game_players = []
+    for index, lobby_player in enumerate(ordered_lobby_players, start=1):
+        current_game_players.append({
+            "player_id": f"player{index}",
+            "name": lobby_player.player_name,
+        })
+
+    bot_slots = max(0, lobby.max_players - len(current_game_players))
+    existing_ids = {player["player_id"] for player in current_game_players}
+    bot_index = 1
+    while len(current_game_players) < lobby.max_players and bot_index <= bot_slots:
+        bot_id = f"ai_{bot_index}"
+        if bot_id in existing_ids:
+            bot_index += 1
+            continue
+
+        current_game_players.append({
+            "player_id": bot_id,
+            "name": f"Bot {bot_index}",
+        })
+        existing_ids.add(bot_id)
+        bot_index += 1
 
     game_state = engine.initialize_game(current_game_players)
     game_log = [f"Game started from lobby: {lobby.name}. {current_game_players[0]['name']} is on GO."]
@@ -1076,6 +1135,15 @@ def game_state_status(game_id):
     second_player = game_state.players.get(second_player_id, player)
     active_player_id = get_active_player_id()
     current_user_player_id = get_current_user_player_id()
+    player_ids = game_state.turn_order or list(game_state.players.keys())
+    player_snapshot = [
+        {
+            "player_id": player_id,
+            "position": game_state.players[player_id].pos,
+            "money": game_state.players[player_id].cash,
+        }
+        for player_id in player_ids
+    ]
 
     state_signature = json.dumps({
         "game_id": game_id,
@@ -1086,6 +1154,7 @@ def game_state_status(game_id):
         "second_player_position": second_player.pos,
         "money": player.cash,
         "second_player_money": second_player.cash,
+        "players": player_snapshot,
         "can_buy": can_buy and pending_buy_player_id == current_user_player_id,
         "pending_buy_player_id": pending_buy_player_id,
         "pending_buy_tile_index": pending_buy_tile_index,
@@ -1118,6 +1187,7 @@ def game_state_status(game_id):
         "winner": format_player_name(game_state.winner_id) if game_state.winner_id else None,
         "game_log": game_log,
         "game_log_count": len(game_log),
+        "players": player_snapshot,
         "state_signature": state_signature,
         "html": render_game_html(),
     })
