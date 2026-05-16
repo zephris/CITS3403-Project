@@ -894,6 +894,9 @@ def profile():
         session.clear()
         return redirect(url_for("login"))
 
+    back_url = request.args.get("next") or url_for("home")
+    back_label = "Back to Lobby" if back_url.startswith("/lobby/") else "Home"
+
     if request.method == "POST":
         bio = request.form.get("bio", "").strip()
         profile_public = request.form.get("profile_public") == "on"
@@ -905,7 +908,7 @@ def profile():
         user.profile_public = profile_public
         db.session.commit()
 
-        return redirect(url_for("profile"))
+        return redirect(url_for("profile", next=back_url))
 
     joined_lobby_players = (
         LobbyPlayer.query
@@ -938,13 +941,18 @@ def profile():
         hosted_count=hosted_count,
         games_won=games_won,
         win_rate=win_rate,
-        joined_lobbies=joined_lobbies
+        joined_lobbies=joined_lobbies,
+        back_url=back_url,
+        back_label=back_label
     )
 
 
 @app.route("/users/<username>")
 def public_profile(username):
     target_user = User.query.filter_by(username=username).first()
+
+    back_url = request.args.get("next") or url_for("lobby_browser")
+    back_label = "Back to Lobby" if back_url.startswith("/lobby/") else "Lobby Browser"
 
     if target_user is None:
         return render_template(
@@ -954,7 +962,7 @@ def public_profile(username):
         )
 
     if session.get("username") == username:
-        return redirect(url_for("profile"))
+        return redirect(url_for("profile", next=back_url))
 
     bio = getattr(target_user, "bio", "Monopoly Perth player")
     profile_public = getattr(target_user, "profile_public", True)
@@ -993,7 +1001,9 @@ def public_profile(username):
         bio=bio,
         total_lobbies=total_lobbies,
         hosted_count=hosted_count,
-        joined_lobbies=joined_lobbies
+        joined_lobbies=joined_lobbies,
+        back_url=back_url,
+        back_label=back_label
     )
 
 @app.route("/settings")

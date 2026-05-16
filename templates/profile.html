@@ -15,7 +15,7 @@
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1">🎲 Monopoly: Perth Edition</span>
             <div>
-                <a href="{{ url_for('home') }}" class="btn btn-outline-light btn-sm me-2">Home</a>
+                <a href="{{ back_url }}" class="btn btn-outline-light btn-sm me-2">{{ back_label }}</a>
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Logout</a>
             </div>
         </div>
@@ -166,27 +166,16 @@
                 <form action="{{ url_for('profile') }}" method="post">
                     <div class="mb-3">
                         <label for="bio-input" class="form-label">Bio</label>
-                        <textarea
-                            id="bio-input"
-                            name="bio"
-                            class="form-control"
-                            rows="3"
-                            maxlength="300"
-                            placeholder="Write something about yourself..."
-                        >{{ user.bio }}</textarea>
+                        <textarea id="bio-input" name="bio" class="form-control" rows="3" maxlength="300"
+                            placeholder="Write something about yourself...">{{ user.bio }}</textarea>
                         <div class="form-text">
                             Maximum 300 characters.
                         </div>
                     </div>
 
                     <div class="form-check form-switch mb-3">
-                        <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="public-profile"
-                            name="profile_public"
-                            {% if user.profile_public %}checked{% endif %}
-                        >
+                        <input class="form-check-input" type="checkbox" id="public-profile" name="profile_public" {% if
+                            user.profile_public %}checked{% endif %}>
                         <label class="form-check-label" for="public-profile">
                             Make profile public
                         </label>

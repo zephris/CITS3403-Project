@@ -68,7 +68,7 @@
                         {% for player in players %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
-                                <a href="{{ url_for('public_profile', username=player.player_name) }}"
+                                <a href="{{ url_for('public_profile', username=player.player_name, next=url_for('lobby_page', lobby_id=lobby.id)) }}"
                                     class="text-decoration-none fw-bold">
                                     {{ player.player_name }}
                                 </a>
