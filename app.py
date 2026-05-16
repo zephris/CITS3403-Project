@@ -33,6 +33,10 @@ can_buy = False
 game_over = False
 waiting_for_ai = False
 
+# Multiplayer restart voting state. In LAN multiplayer, a restart only happens
+# after every real player has requested it.
+restart_votes = set()
+
 # Pending property-purchase state. The game engine advances the turn immediately,
 # so we store who landed on an unowned property until they click Buy or Skip.
 pending_buy_player_id = None
@@ -401,6 +405,16 @@ def current_game_mode():
     return "singleplayer" if is_singleplayer_mode() else "multiplayer"
 
 
+def get_restart_required_count():
+    if current_game_mode() == "multiplayer":
+        return len(game_state.turn_order)
+    return 1
+
+
+def get_restart_vote_names():
+    return [format_player_name(player_id) for player_id in sorted(restart_votes)]
+
+
 def get_active_player_id():
     return game_state.turn_order[game_state.current_turn_index]
 
@@ -551,6 +565,12 @@ def build_game_template_context(dice_result=None):
         "sellable_properties": active_info["sellable_properties"],
         "can_sell_property": active_info["can_sell_property"],
         "active_property_player_name": active_info["active_property_player_name"],
+
+        # Multiplayer restart voting.
+        "restart_votes_count": len(restart_votes),
+        "restart_required_count": get_restart_required_count(),
+        "restart_has_voted": current_user_player_id in restart_votes,
+        "restart_vote_names": get_restart_vote_names(),
     }
 
 
@@ -608,7 +628,7 @@ def home():
 @app.route("/singleplayer")
 def singleplayer():
     global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, game_id
-    global property_houses, current_game_players
+    global property_houses, current_game_players, restart_votes
 
     game_id = "local_demo_game"
     current_game_players = [
@@ -622,6 +642,7 @@ def singleplayer():
     game_over = False
     waiting_for_ai = False
     property_houses = {}
+    restart_votes = set()
 
     return redirect(url_for("game_page", game_id=game_id))
 
@@ -688,6 +709,46 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("home"))
+
+
+@app.route("/profile")
+def profile():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
+    total_lobbies = LobbyPlayer.query.filter_by(player_name=username).count()
+    hosted_count = LobbyPlayer.query.filter_by(
+        player_name=username,
+        is_host=True
+    ).count()
+
+    return render_template(
+        "profile.html",
+        username=username,
+        total_lobbies=total_lobbies,
+        hosted_count=hosted_count
+    )
+
+
+@app.route("/settings")
+def settings():
+    return render_template(
+        "simple_page.html",
+        title="Settings",
+        message="Settings page is not implemented yet."
+    )
+
+
+@app.route("/credit")
+def credit():
+    return render_template(
+        "simple_page.html",
+        title="Credits",
+        message="Monopoly Web - Perth Edition project."
+    )
+
 
 @app.route("/browser")
 def lobby_browser():
@@ -966,7 +1027,7 @@ def lobby_chat(lobby_id):
 @app.route("/lobby/<int:lobby_id>/start", methods=["POST"])
 def start_lobby_game_from_lobby(lobby_id):
     global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, game_id
-    global current_game_players, property_houses
+    global current_game_players, property_houses, restart_votes
 
     if "username" not in session:
         return redirect(url_for("login"))
@@ -1039,6 +1100,7 @@ def start_lobby_game_from_lobby(lobby_id):
     game_over = False
     waiting_for_ai = False
     property_houses = {}
+    restart_votes = set()
 
     return redirect(url_for("game_page", game_id=game_id))
 
@@ -1047,7 +1109,7 @@ def start_lobby_game_from_lobby(lobby_id):
 @app.route("/lobby/start", methods=["POST"])
 def start_lobby_game():
     global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, game_id
-    global current_game_players
+    global current_game_players, restart_votes
 
     game_id = "local_demo_game"
     current_game_players = list(players)
@@ -1057,6 +1119,7 @@ def start_lobby_game():
     clear_pending_buy()
     game_over = False
     waiting_for_ai = False
+    restart_votes = set()
     lobby_demo_state = {
     "player2_ready": False,
     "messages": [
@@ -1095,6 +1158,7 @@ def game_state_status(game_id):
         "property_houses": property_houses,
         "property_owners": {idx: state.owner_id for idx, state in game_state.properties.items()},
         "property_state_houses": {idx: state.houses for idx, state in game_state.properties.items()},
+        "restart_votes": sorted(restart_votes),
     }, sort_keys=True)
 
     return jsonify({
@@ -1118,6 +1182,10 @@ def game_state_status(game_id):
         "winner": format_player_name(game_state.winner_id) if game_state.winner_id else None,
         "game_log": game_log,
         "game_log_count": len(game_log),
+        "restart_votes_count": len(restart_votes),
+        "restart_required_count": get_restart_required_count(),
+        "restart_has_voted": current_user_player_id in restart_votes,
+        "restart_vote_names": get_restart_vote_names(),
         "state_signature": state_signature,
         "html": render_game_html(),
     })
@@ -1484,16 +1552,35 @@ def sell_property():
 @app.route("/reset", methods=["POST"])
 def reset_game():
     global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, property_houses
-    global current_game_players
+    global current_game_players, restart_votes
+
+    current_user_player_id = get_current_user_player_id()
 
     if is_singleplayer_mode():
         current_game_players = [
             {"player_id": "player1", "name": session.get("username", "Player 1")},
             {"player_id": "ai_1", "name": "AI Player"},
         ]
+        restart_votes = set()
+    else:
+        # LAN multiplayer requires every real player to approve the restart.
+        restart_votes.add(current_user_player_id)
+        required_votes = set(game_state.turn_order)
+
+        if not required_votes.issubset(restart_votes):
+            game_log.append(
+                f"{format_player_name(current_user_player_id)} requested a restart "
+                f"({len(restart_votes)}/{len(required_votes)} approvals)."
+            )
+            if is_ajax_request():
+                return render_game_page()
+            return redirect(url_for("game_page", game_id=game_id))
+
+        game_log.append("All players agreed to restart the game.")
+        restart_votes = set()
 
     game_state = engine.initialize_game(current_game_players)
-    game_log = ["Game reset! Player 1 is on GO."]
+    game_log = [f"Game reset! {current_game_players[0]['name']} is on GO."]
     last_roll = None
     clear_pending_buy()
     game_over = False
