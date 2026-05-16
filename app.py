@@ -42,6 +42,11 @@ restart_votes = set()
 pending_buy_player_id = None
 pending_buy_tile_index = None
 
+# Pending jail decisions submitted from the UI.
+# The engine reads these on the jailed player's next turn.
+pending_jail_actions = {}
+pending_jail_purchases = {}
+
 # Local house tracking for Shuo's enhanced UI.
 # Key: tile index, Value: number of houses on that property.
 property_houses = {}
@@ -106,7 +111,32 @@ def decision_provider(player_id, action, context):
         return {"bid": False}
 
     if action == "jail_action":
-        return {"choice": "roll"}
+        # Human players can choose from the jail panel. If they simply press
+        # Roll Dice, the default remains trying to roll doubles.
+        selected = pending_jail_actions.pop(player_id, None)
+        if selected is None:
+            return {"choice": "roll"}
+
+        if selected.get("choice") == "buy_card":
+            pending_jail_purchases[player_id] = selected
+
+        return selected
+
+    if action == "jail_buy_offer":
+        purchase = pending_jail_purchases.get(player_id, {})
+        sellers = context.get("sellers", [])
+        seller_id = purchase.get("seller_id") or context.get("seller_id")
+        if seller_id not in sellers and sellers:
+            seller_id = sellers[0]
+        return {
+            "seller_id": seller_id,
+            "offer": int(purchase.get("offer", config.jail_fine)),
+        }
+
+    if action == "jail_buy_response":
+        # Prototype LAN implementation: a seller with a card accepts the offer.
+        seller = game_state.players.get(player_id)
+        return {"accept": bool(seller and seller.jail_cards > 0 and context.get("offer", 0) > 0)}
 
     return {}
 
@@ -243,14 +273,20 @@ def format_event(event):
         return f"{name} bought {event.get('tile')}."
 
     if event_type == "rent_paid":
-        return (
+        text = (
             f"{format_player_name(event.get('from'))} paid "
             f"${event.get('amount')} rent to "
             f"{format_player_name(event.get('to'))} for {event.get('tile')}."
         )
+        if event.get("bankrupt"):
+            text += f" {format_player_name(event.get('from'))} is bankrupt and exits the game."
+        return text
 
     if event_type == "tax_paid":
-        return f"{name} paid ${event.get('amount')} tax."
+        text = f"{name} paid ${event.get('amount')} tax."
+        if event.get("bankrupt"):
+            text += f" {name} is bankrupt and exits the game."
+        return text
 
     if event_type == "card_drawn":
         return f"{name} drew a card: {event.get('description')}"
@@ -267,6 +303,27 @@ def format_event(event):
     if event_type == "skip_bankrupt":
         return f"{name} is bankrupt and skipped their turn."
 
+    if event_type == "go_to_jail":
+        return f"{name} landed on Go To Jail and was sent to Jail."
+
+    if event_type == "jail_paid_fine":
+        return f"{name} paid ${event.get('fine')} and left jail."
+
+    if event_type == "jail_bought_card":
+        negotiation = event.get("negotiation", {})
+        return (
+            f"{name} bought a Get Out of Jail Free card from "
+            f"{format_player_name(negotiation.get('seller_id'))} for ${negotiation.get('price')}."
+        )
+
+    if event_type == "jail_buy_failed":
+        return f"{name} could not buy a Get Out of Jail Free card and remains in jail."
+
+    if event_type == "jail_release":
+        jail_text = format_event(event.get("jail_event", {}))
+        tile_text = format_event(event.get("tile_event", {}))
+        return f"{jail_text} Then {tile_text}"
+
     if event_type == "go_to_jail_double":
         return f"{name} rolled doubles three times and went to jail."
 
@@ -275,9 +332,6 @@ def format_event(event):
 
     if event_type == "jail_roll_doubles":
         return f"{name} rolled doubles and got out of jail."
-
-    if event_type == "jail_release":
-        return f"{name} was released from jail and continued their turn."
 
     if event_type == "jail_forced_release":
         return f"{name} paid ${event.get('fine')} and was released from jail."
@@ -308,34 +362,30 @@ def record_event(event_type, amount=0, metadata=None):
 
 
 def finalize_game():
-    """
-    Temporary local finalize function.
-    Later this can be connected to POST /stats/games/{game_id}/finalize.
-    """
-    player = game_state.players["player1"]
-    ai_player = game_state.players["ai_1"]
+    """Temporary local finalize function for both 2-, 3-, and 4-player games."""
+    active_players = [
+        player_id for player_id in game_state.turn_order
+        if not getattr(game_state.players[player_id], "bankrupt", False)
+    ]
+
+    player_results = []
+    for player_id in game_state.turn_order:
+        player = game_state.players[player_id]
+        player_results.append({
+            "user_id": player_id,
+            "final_rank": 1 if player_id == game_state.winner_id else (2 if player_id not in active_players else 1),
+            "bankrupt_flag": getattr(player, "bankrupt", False),
+            "turns_taken": getattr(player, "turns_taken", 0),
+            "cash": player.cash,
+        })
 
     result = {
         "game_id": game_id,
         "winner_user_id": game_state.winner_id,
-        "player_results": [
-            {
-                "user_id": "player1",
-                "final_rank": 1 if game_state.winner_id == "player1" else 2,
-                "bankrupt_flag": getattr(player, "bankrupt", False),
-                "turns_taken": getattr(player, "turns_taken", 0)
-            },
-            {
-                "user_id": "ai_1",
-                "final_rank": 1 if game_state.winner_id == "ai_1" else 2,
-                "bankrupt_flag": getattr(ai_player, "bankrupt", False),
-                "turns_taken": getattr(ai_player, "turns_taken", 0)
-            }
-        ]
+        "player_results": player_results,
     }
 
     print(result)
-
 
 def update_buy_status():
     """
@@ -525,6 +575,97 @@ def get_active_property_info():
 
     return info
 
+def get_all_player_view_models():
+    token_icons = ["🧍", "🚗", "🎩", "🐶"]
+    current_user_player_id = get_current_user_player_id()
+    active_player_id = get_active_player_id()
+
+    result = []
+    for index, player_id in enumerate(game_state.turn_order):
+        player = game_state.players[player_id]
+        result.append({
+            "player_id": player_id,
+            "name": player.name,
+            "cash": player.cash,
+            "pos": player.pos,
+            "bankrupt": bool(getattr(player, "bankrupt", False)),
+            "in_jail_turns": getattr(player, "in_jail_turns", 0),
+            "jail_cards": getattr(player, "jail_cards", 0),
+            "is_you": player_id == current_user_player_id,
+            "is_current_turn": player_id == active_player_id,
+            "token": token_icons[index % len(token_icons)],
+        })
+
+    return result
+
+
+def get_jail_action_info():
+    current_user_player_id = get_current_user_player_id()
+    active_player_id = get_active_player_id()
+    player = game_state.players.get(current_user_player_id)
+
+    can_choose = (
+        not game_over
+        and not waiting_for_ai
+        and not can_buy
+        and current_user_player_id == active_player_id
+        and player is not None
+        and player.in_jail_turns > 0
+        and not player.bankrupt
+    )
+
+    sellers = []
+    if can_choose:
+        for other_id, other in game_state.players.items():
+            if other_id != current_user_player_id and other.jail_cards > 0 and not other.bankrupt:
+                sellers.append({
+                    "player_id": other_id,
+                    "name": other.name,
+                    "cards": other.jail_cards,
+                })
+
+    return {
+        "can_choose_jail_action": can_choose,
+        "jail_turns": player.in_jail_turns if player else 0,
+        "jail_cards": player.jail_cards if player else 0,
+        "jail_fine": config.jail_fine,
+        "jail_card_sellers": sellers,
+    }
+
+
+def process_active_turn(dice_result_for_response=False):
+    global last_roll, waiting_for_ai
+
+    clear_pending_buy()
+
+    acting_player_id = get_active_player_id()
+    old_position = game_state.players[acting_player_id].pos
+    event = engine.take_turn(game_state, decision_provider)
+
+    if "player_id" not in event:
+        event["player_id"] = acting_player_id
+
+    new_position = game_state.players[acting_player_id].pos
+    if event.get("roll") is not None:
+        last_roll = event.get("roll")
+    else:
+        last_roll = (new_position - old_position) % len(config.tiles)
+
+    text = format_event(event)
+    if text:
+        game_log.append(text)
+
+    maybe_create_pending_buy(acting_player_id)
+    check_game_over()
+
+    if not game_over and not can_buy and is_singleplayer_mode() and get_active_player_id() != "player1":
+        waiting_for_ai = True
+    else:
+        waiting_for_ai = False
+
+    return last_roll if dice_result_for_response else None
+
+
 def build_game_template_context(dice_result=None):
     player = get_visible_player()
     tile = get_visible_tile()
@@ -532,6 +673,8 @@ def build_game_template_context(dice_result=None):
     current_user_player_id = get_current_user_player_id()
     second_player_id = get_other_player_id()
     second_player = game_state.players.get(second_player_id, player)
+    all_players = get_all_player_view_models()
+    jail_info = get_jail_action_info()
 
     active_tile = get_pending_buy_tile() or get_active_tile()
     property_price = 0
@@ -557,6 +700,8 @@ def build_game_template_context(dice_result=None):
         "money": player.cash,
         "ai_money": second_player.cash,
         "ai_position": second_player.pos,
+        "all_players": all_players,
+        "all_players_json": json.dumps(all_players),
         "dice_result": dice_result,
         "game_log": game_log,
         "can_buy": can_buy and pending_buy_player_id == current_user_player_id,
@@ -593,6 +738,7 @@ def build_game_template_context(dice_result=None):
         "restart_required_count": get_restart_required_count(),
         "restart_has_voted": current_user_player_id in restart_votes,
         "restart_vote_names": get_restart_vote_names(),
+        **jail_info,
     }
 
 
@@ -661,6 +807,8 @@ def singleplayer():
     game_log = ["Singleplayer game started! Player 1 is on GO."]
     last_roll = None
     clear_pending_buy()
+    pending_jail_actions.clear()
+    pending_jail_purchases.clear()
     game_over = False
     waiting_for_ai = False
     property_houses = {}
@@ -1143,17 +1291,19 @@ def start_lobby_game_from_lobby(lobby_id):
         key=lambda lobby_player: lobby_player.joined_at
     )
 
-    # The current board UI supports two visible players.
-    # In LAN multiplayer player2 must be the real second browser user, not ai_1.
+    # Support 2-, 3-, and 4-player LAN games. Player ids are stable and
+    # mapped to lobby join order.
     current_game_players = [
-        {"player_id": "player1", "name": ordered_lobby_players[0].player_name},
-        {"player_id": "player2", "name": ordered_lobby_players[1].player_name},
+        {"player_id": f"player{index + 1}", "name": lobby_player.player_name}
+        for index, lobby_player in enumerate(ordered_lobby_players[:4])
     ]
 
     game_state = engine.initialize_game(current_game_players)
     game_log = [f"Game started from lobby: {lobby.name}. {current_game_players[0]['name']} is on GO."]
     last_roll = None
     clear_pending_buy()
+    pending_jail_actions.clear()
+    pending_jail_purchases.clear()
     game_over = False
     waiting_for_ai = False
     property_houses = {}
@@ -1174,6 +1324,8 @@ def start_lobby_game():
     game_log = ["Game started! Player 1 is on GO."]
     last_roll = None
     clear_pending_buy()
+    pending_jail_actions.clear()
+    pending_jail_purchases.clear()
     game_over = False
     waiting_for_ai = False
     restart_votes = set()
@@ -1218,6 +1370,7 @@ def game_state_status(game_id):
         "current_user_player_id": current_user_player_id,
         "player_position": player.pos,
         "second_player_position": second_player.pos,
+        "all_players": get_all_player_view_models(),
         "money": player.cash,
         "second_player_money": second_player.cash,
         "can_buy": can_buy and pending_buy_player_id == current_user_player_id,
@@ -1243,6 +1396,7 @@ def game_state_status(game_id):
         "second_player_position": second_player.pos,
         "ai_money": second_player.cash,
         "second_player_money": second_player.cash,
+        "all_players": get_all_player_view_models(),
         "location": tile.name,
         "can_buy": can_buy and pending_buy_player_id == current_user_player_id,
         "game_over": game_over,
@@ -1311,19 +1465,7 @@ def game_page(game_id):
 
 @app.route("/roll", methods=["POST"])
 def roll_dice():
-    global last_roll, can_buy, waiting_for_ai
-
-    if game_over:
-        if is_ajax_request():
-            return ajax_dice_response(last_roll)
-        return redirect(url_for("game_page", game_id=game_id))
-
-    if can_buy:
-        if is_ajax_request():
-            return ajax_dice_response(last_roll)
-        return redirect(url_for("game_page", game_id=game_id))
-
-    if waiting_for_ai:
+    if game_over or can_buy or waiting_for_ai:
         if is_ajax_request():
             return ajax_dice_response(last_roll)
         return redirect(url_for("game_page", game_id=game_id))
@@ -1333,32 +1475,10 @@ def roll_dice():
             return ajax_dice_response(last_roll)
         return redirect(url_for("game_page", game_id=game_id))
 
-    clear_pending_buy()
-
-    acting_player_id = get_active_player_id()
-    old_position = game_state.players[acting_player_id].pos
-    event = engine.take_turn(game_state, decision_provider)
-
-    if "player_id" not in event:
-        event["player_id"] = acting_player_id
-
-    new_position = game_state.players[acting_player_id].pos
-    last_roll = (new_position - old_position) % len(config.tiles)
-
-    text = format_event(event)
-    if text:
-        game_log.append(text)
-
-    maybe_create_pending_buy(acting_player_id)
-    check_game_over()
-
-    if not game_over and not can_buy and is_singleplayer_mode() and get_active_player_id() != "player1":
-        waiting_for_ai = True
-    else:
-        waiting_for_ai = False
+    dice_result = process_active_turn(dice_result_for_response=True)
 
     if is_ajax_request():
-        return ajax_dice_response(last_roll)
+        return ajax_dice_response(dice_result)
 
     return redirect(url_for("game_page", game_id=game_id))
 
@@ -1488,6 +1608,65 @@ def ai_turn():
     if is_ajax_request():
         return ajax_dice_response(last_roll)
 
+    return redirect(url_for("game_page", game_id=game_id))
+
+@app.route("/jail/pay", methods=["POST"])
+def jail_pay_fine():
+    current_user_player_id = get_current_user_player_id()
+    if not get_jail_action_info()["can_choose_jail_action"]:
+        if is_ajax_request():
+            return render_game_page()
+        return redirect(url_for("game_page", game_id=game_id))
+
+    pending_jail_actions[current_user_player_id] = {"choice": "pay_fine"}
+    process_active_turn()
+
+    if is_ajax_request():
+        return render_game_page()
+    return redirect(url_for("game_page", game_id=game_id))
+
+
+@app.route("/jail/use-card", methods=["POST"])
+def jail_use_card():
+    current_user_player_id = get_current_user_player_id()
+    info = get_jail_action_info()
+    if not info["can_choose_jail_action"] or info["jail_cards"] <= 0:
+        if is_ajax_request():
+            return render_game_page()
+        return redirect(url_for("game_page", game_id=game_id))
+
+    pending_jail_actions[current_user_player_id] = {"choice": "use_card"}
+    process_active_turn()
+
+    if is_ajax_request():
+        return render_game_page()
+    return redirect(url_for("game_page", game_id=game_id))
+
+
+@app.route("/jail/buy-card", methods=["POST"])
+def jail_buy_card():
+    current_user_player_id = get_current_user_player_id()
+    info = get_jail_action_info()
+    if not info["can_choose_jail_action"] or not info["jail_card_sellers"]:
+        if is_ajax_request():
+            return render_game_page()
+        return redirect(url_for("game_page", game_id=game_id))
+
+    seller_id = request.form.get("seller_id") or info["jail_card_sellers"][0]["player_id"]
+    try:
+        offer = int(request.form.get("offer", config.jail_fine))
+    except (TypeError, ValueError):
+        offer = config.jail_fine
+
+    pending_jail_actions[current_user_player_id] = {
+        "choice": "buy_card",
+        "seller_id": seller_id,
+        "offer": max(1, offer),
+    }
+    process_active_turn()
+
+    if is_ajax_request():
+        return render_game_page()
     return redirect(url_for("game_page", game_id=game_id))
 
 
@@ -1695,6 +1874,8 @@ def reset_game():
     game_log = [f"Game reset! {current_game_players[0]['name']} is on GO."]
     last_roll = None
     clear_pending_buy()
+    pending_jail_actions.clear()
+    pending_jail_purchases.clear()
     game_over = False
     waiting_for_ai = False
     property_houses = {}

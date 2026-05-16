@@ -674,6 +674,55 @@
                                 </div>
                                 {% endif %}
 
+
+                                {% if can_choose_jail_action %}
+                                <div class="jail-action-panel mt-3">
+                                    <div class="jail-action-title">🚔 You are in Jail</div>
+                                    <div class="jail-action-text">
+                                        Choose how to get out. You have spent {{ jail_turns }} turn(s) in jail.
+                                    </div>
+
+                                    <div class="d-flex gap-2 justify-content-center flex-wrap mt-2">
+                                        <form class="ajax-action-form" data-action-name="Paying..."
+                                            action="{{ url_for('jail_pay_fine') }}" method="post">
+                                            <button type="submit" class="btn btn-warning btn-sm">
+                                                Pay ${{ jail_fine }} Fine
+                                            </button>
+                                        </form>
+
+                                        {% if jail_cards > 0 %}
+                                        <form class="ajax-action-form" data-action-name="Using Card..."
+                                            action="{{ url_for('jail_use_card') }}" method="post">
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                Use Jail Card ({{ jail_cards }})
+                                            </button>
+                                        </form>
+                                        {% endif %}
+
+                                        {% if jail_card_sellers %}
+                                        <form class="ajax-action-form jail-buy-form" data-action-name="Buying Card..."
+                                            action="{{ url_for('jail_buy_card') }}" method="post">
+                                            <select name="seller_id" class="form-select form-select-sm">
+                                                {% for seller in jail_card_sellers %}
+                                                <option value="{{ seller.player_id }}">
+                                                    Buy card from {{ seller.name }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                            <input type="number" name="offer" class="form-control form-control-sm"
+                                                value="{{ jail_fine }}" min="1">
+                                            <button type="submit" class="btn btn-outline-success btn-sm">
+                                                Buy Card
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-muted small mt-2">
+                                        Or press Roll Dice to try rolling doubles. After 3 failed turns, the fine is forced.
+                                    </div>
+                                </div>
+                                {% endif %}
+
                                 {% if can_buy and not waiting_for_ai and can_control_current_action %}
                                 <div class="mt-2 d-flex gap-2 justify-content-center flex-wrap">
                                     <form class="ajax-action-form" data-action-name="Buying..."
@@ -732,14 +781,20 @@
                         🏆 Leaderboard
                     </div>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
-                            <span>👤 {{ current_player_name }} (You)</span>
-                            <span class="badge bg-success rounded-pill">$ {{ money }}</span>
+                        {% for p in all_players %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center {% if p.is_you %}bg-light{% endif %}">
+                            <span>
+                                {{ p.token }} {{ p.name }}
+                                {% if p.is_you %}<small class="text-muted">(You)</small>{% endif %}
+                                {% if p.is_current_turn %}<small class="badge bg-warning text-dark ms-1">Turn</small>{% endif %}
+                                {% if p.in_jail_turns > 0 %}<small class="badge bg-dark ms-1">Jail</small>{% endif %}
+                                {% if p.bankrupt %}<small class="badge bg-danger ms-1">Bankrupt</small>{% endif %}
+                            </span>
+                            <span class="badge {% if p.bankrupt %}bg-danger{% elif p.is_you %}bg-success{% else %}bg-secondary{% endif %} rounded-pill">
+                                $ {{ p.cash }}
+                            </span>
                         </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>{{ second_player_icon }} {{ second_player_name }}</span>
-                            <span class="badge bg-secondary rounded-pill">$ {{ ai_money }}</span>
-                        </li>
+                        {% endfor %}
                     </ul>
                 </div>
 
@@ -844,6 +899,7 @@
         </div>
     </div>
     <script id="property-house-data" type="application/json">{{ property_houses_json|safe }}</script>
+    <script id="player-token-data" type="application/json">{{ all_players_json|safe }}</script>
     <script>
         window.GAME_WAITING_FOR_AI = document.body.dataset.waitingForAi === "true";
         window.GAME_MODE = document.body.dataset.gameMode || "singleplayer";
@@ -895,6 +951,61 @@
                 });
             }
 
+
+
+            function getPlayerTokenData() {
+                const dataScript = document.getElementById("player-token-data");
+                if (!dataScript) {
+                    return [];
+                }
+
+                try {
+                    return JSON.parse(dataScript.textContent || "[]");
+                } catch (error) {
+                    return [];
+                }
+            }
+
+            function renderPlayerTokens() {
+                document.querySelectorAll(".player-token, .ai-token, .multi-player-token").forEach(function (element) {
+                    element.remove();
+                });
+
+                const players = getPlayerTokenData();
+                const grouped = {};
+                players.forEach(function (player) {
+                    if (player.bankrupt) {
+                        return;
+                    }
+                    const pos = String(player.pos);
+                    if (!grouped[pos]) {
+                        grouped[pos] = [];
+                    }
+                    grouped[pos].push(player);
+                });
+
+                Object.keys(grouped).forEach(function (position) {
+                    const tile = document.querySelector('[data-tile-position="' + position + '"]');
+                    if (!tile) {
+                        return;
+                    }
+
+                    grouped[position].forEach(function (player, index) {
+                        const token = document.createElement("div");
+                        token.className = "multi-player-token token-slot-" + (index + 1);
+                        token.title = player.name;
+                        token.textContent = player.token || "●";
+                        if (player.is_you) {
+                            token.classList.add("token-you");
+                        }
+                        if (player.is_current_turn) {
+                            token.classList.add("token-current-turn");
+                        }
+                        tile.appendChild(token);
+                    });
+                });
+            }
+
             function getDiceElements() {
                 return {
                     stage: document.getElementById("dice-animation"),
@@ -926,7 +1037,14 @@
                     currentHouseData.textContent = newHouseData.textContent;
                 }
 
+                const newPlayerData = newDocument.getElementById("player-token-data");
+                const currentPlayerData = document.getElementById("player-token-data");
+                if (newPlayerData && currentPlayerData) {
+                    currentPlayerData.textContent = newPlayerData.textContent;
+                }
+
                 renderHouseMarkers();
+                renderPlayerTokens();
 
                 window.GAME_WAITING_FOR_AI =
                     newDocument.body && newDocument.body.dataset.waitingForAi === "true";
@@ -1086,6 +1204,7 @@
                     second_player_position: data.second_player_position,
                     money: data.money,
                     second_player_money: data.second_player_money,
+                    all_players: data.all_players,
                     game_log_count: data.game_log_count,
                     restart_votes_count: data.restart_votes_count,
                     restart_required_count: data.restart_required_count,
@@ -1156,6 +1275,7 @@
             }
 
             renderHouseMarkers();
+            renderPlayerTokens();
             setupRollForm();
             setupActionForms();
             maybeRunAiTurn();

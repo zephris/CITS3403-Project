@@ -1143,3 +1143,71 @@ html { scroll-behavior: smooth; }
         max-height: 260px;
     }
 }
+
+/* Multi-player support: dynamic tokens for 2/3/4-player games */
+.multi-player-token {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    font-size: 1rem;
+    z-index: 60;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.34), inset 0 0 0 2px rgba(255,255,255,0.9);
+    border: 3px solid #64748b;
+}
+
+.multi-player-token.token-you {
+    border-color: #e53935;
+}
+
+.multi-player-token.token-current-turn {
+    outline: 3px solid #f6c343;
+}
+
+.token-slot-1 { right: 4px; bottom: 4px; }
+.token-slot-2 { left: 4px; top: 4px; }
+.token-slot-3 { right: 4px; top: 4px; }
+.token-slot-4 { left: 4px; bottom: 4px; }
+
+.jail-action-panel {
+    width: min(520px, 96%);
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.jail-action-title {
+    font-weight: 950;
+    color: #991b1b;
+}
+
+.jail-action-text {
+    font-size: 0.86rem;
+    color: #475569;
+}
+
+.jail-buy-form {
+    display: grid;
+    grid-template-columns: minmax(140px, 1fr) 80px auto;
+    gap: 6px;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .multi-player-token {
+        width: 22px;
+        height: 22px;
+        font-size: 0.8rem;
+    }
+
+    .jail-buy-form {
+        grid-template-columns: 1fr;
+        width: 100%;
+    }
+}
