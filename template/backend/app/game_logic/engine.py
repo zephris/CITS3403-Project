@@ -60,6 +60,8 @@ class PlayerState:
     in_jail_turns: int = 0
     jail_cards: int = 0
     bankrupt: bool = False
+    consecutive_doubles: int = 0
+    turns_taken: int = 0
 
 
 @dataclass
@@ -162,8 +164,12 @@ class GameEngine:
         )
 
     # dice roller
+    def roll_dice_pair(self) -> tuple[int, int]:
+        return self.random.randint(1, 6), self.random.randint(1, 6)
+
     def roll_dice(self) -> int:
-        return self.random.randint(1, 6) + self.random.randint(1, 6)
+        d1, d2 = self.roll_dice_pair()
+        return d1 + d2
 
     # turn logic flow, return events happened as dict
     def take_turn(
@@ -178,25 +184,49 @@ class GameEngine:
             self._advance_turn(state)
             return {"type": "skip_bankrupt", "player_id": player_id}
 
+        player.turns_taken += 1
+
         jail_event: Optional[dict] = None
-        jail_roll_total: Optional[int] = None
+        dice_total: Optional[int] = None
+        rolled_double = False
+
         if player.in_jail_turns > 0:
-            jail_event, can_continue, jail_roll_total = self._handle_jail_turn(
+            jail_event, can_continue, dice_total, rolled_double = self._handle_jail_turn(
                 state,
                 player_id,
                 decision_provider,
             )
             if not can_continue:
-                self._check_bankruptcy(state, player_id)
                 self._check_winner(state)
                 self._advance_turn(state)
                 return jail_event
-
-        if jail_roll_total is None:
-            move = self.roll_dice()
         else:
-            move = jail_roll_total
-        
+            d1, d2 = self.roll_dice_pair()
+            dice_total = d1 + d2
+            rolled_double = d1 == d2
+
+            if rolled_double:
+                player.consecutive_doubles += 1
+            else:
+                player.consecutive_doubles = 0
+
+            if player.consecutive_doubles >= 3:
+                self._send_to_jail(player)
+                event = {
+                    "type": "go_to_jail_double",
+                    "player_id": player_id,
+                    "roll": dice_total,
+                }
+                self._check_winner(state)
+                self._advance_turn(state)
+                return event
+
+        if dice_total is None:
+            d1, d2 = self.roll_dice_pair()
+            dice_total = d1 + d2
+            rolled_double = d1 == d2
+
+        move = dice_total
         old_pos = player.pos
         new_pos = (old_pos + move) % len(self.config.tiles)
         player.pos = new_pos
@@ -205,15 +235,18 @@ class GameEngine:
 
         tile = self.config.tiles[new_pos]
         event = self._resolve_tile(state, player_id, tile, decision_provider)
+        event.setdefault("roll", move)
+        event.setdefault("rolled_double", rolled_double)
+
         if jail_event:
             event = {
                 "type": "jail_release",
                 "player_id": player_id,
                 "jail_event": jail_event,
                 "tile_event": event,
+                "roll": move,
             }
 
-        self._check_bankruptcy(state, player_id)
         self._check_winner(state)
         self._advance_turn(state)
         return event
@@ -250,15 +283,15 @@ class GameEngine:
             # process rent payment if landing on owned property
             if p_state.owner_id != player_id:
                 rent = self._calculate_rent(tile, p_state)
-                owner = state.players[p_state.owner_id]
-                player.cash -= rent
-                owner.cash += rent
+                paid = self._charge_player(state, player_id, rent, creditor_id=p_state.owner_id)
                 return {
                     "type": "rent_paid",
                     "from": player_id,
                     "to": p_state.owner_id,
-                    "amount": rent,
+                    "amount": paid["paid_amount"],
+                    "required_amount": rent,
                     "tile": tile.name,
+                    "bankrupt": paid["bankrupt"],
                 }
 
             return {"type": "landed_own_property", "player_id": player_id, "tile": tile.name}
@@ -271,15 +304,24 @@ class GameEngine:
         if tile.tile_type == "treasure":
             return self._draw_card(state, player_id, "treasure")
 
-        # tax tile - pay tax amount (mfw ATO)
+        # tax tile - pay tax amount. If the player cannot raise enough cash,
+        # they are declared bankrupt and removed from the game.
         if tile.tile_type == "tax":
-            player.cash -= tile.base_rent
-            return {"type": "tax_paid", "player_id": player_id, "amount": tile.base_rent}
+            paid = self._charge_player(state, player_id, tile.base_rent)
+            return {
+                "type": "tax_paid",
+                "player_id": player_id,
+                "amount": paid["paid_amount"],
+                "required_amount": tile.base_rent,
+                "bankrupt": paid["bankrupt"],
+            }
 
-        # go to jail tile - no effect when player pass
+        # Go To Jail must move the player directly to Jail and end their turn.
         if tile.tile_type == "go_to_jail":
-            pass # free parking
-        return {"type": "no_action", "tile": tile.name}
+            self._send_to_jail(player)
+            return {"type": "go_to_jail", "player_id": player_id, "tile": tile.name}
+
+        return {"type": "no_action", "player_id": player_id, "tile": tile.name}
 
 
     #handle property auction when property is passed without purchase
@@ -399,7 +441,7 @@ class GameEngine:
         state: GameState,
         player_id: str,
         decision_provider: Callable[[str, str, dict], dict],
-    ) -> tuple[dict, bool, Optional[int]]:
+    ) -> tuple[dict, bool, Optional[int], bool]:
         player = state.players[player_id]
         sellers = [
             pid for pid, p in state.players.items()
@@ -407,13 +449,16 @@ class GameEngine:
         ]
 
         if player.in_jail_turns >= 3:
-            player.cash -= self.config.jail_fine
+            paid = self._charge_player(state, player_id, self.config.jail_fine)
             player.in_jail_turns = 0
+            player.consecutive_doubles = 0
             return {
                 "type": "jail_forced_release",
                 "player_id": player_id,
                 "fine": self.config.jail_fine,
-            }, True, None
+                "amount": paid["paid_amount"],
+                "bankrupt": paid["bankrupt"],
+            }, not paid["bankrupt"], None, False
 
         decision = decision_provider(
             player_id,
@@ -422,14 +467,28 @@ class GameEngine:
                 "has_card": player.jail_cards > 0,
                 "sellers": sellers,
                 "turns_in_jail": player.in_jail_turns,
+                "fine": self.config.jail_fine,
             },
         )
         choice = str(decision.get("choice", "roll")).lower()
 
+        if choice in {"pay", "pay_fine", "fine"}:
+            paid = self._charge_player(state, player_id, self.config.jail_fine)
+            player.in_jail_turns = 0
+            player.consecutive_doubles = 0
+            return {
+                "type": "jail_paid_fine",
+                "player_id": player_id,
+                "fine": self.config.jail_fine,
+                "amount": paid["paid_amount"],
+                "bankrupt": paid["bankrupt"],
+            }, not paid["bankrupt"], None, False
+
         if choice == "use_card" and player.jail_cards > 0:
             player.jail_cards -= 1
             player.in_jail_turns = 0
-            return {"type": "jail_used_card", "player_id": player_id}, True, None
+            player.consecutive_doubles = 0
+            return {"type": "jail_used_card", "player_id": player_id}, True, None, False
 
         if choice == "buy_card" and sellers:
             result = self._negotiate_jail_card_purchase(
@@ -439,37 +498,39 @@ class GameEngine:
                 decision_provider,
             )
             if result.get("success"):
-                player.jail_cards += 1
-                player.jail_cards -= 1
                 player.in_jail_turns = 0
+                player.consecutive_doubles = 0
                 return {
                     "type": "jail_bought_card",
                     "player_id": player_id,
                     "negotiation": result,
-                }, True, None
+                }, True, None, False
 
             player.in_jail_turns += 1
             return {
                 "type": "jail_buy_failed",
                 "player_id": player_id,
                 "negotiation": result,
-            }, False, None
+            }, False, None, False
 
-        d1, d2 = self.roll_dice(), self.roll_dice()
-        if d1 == d2:
+        d1, d2 = self.roll_dice_pair()
+        rolled_double = d1 == d2
+        if rolled_double:
             player.in_jail_turns = 0
+            player.consecutive_doubles = 0
             return {
                 "type": "jail_roll_doubles",
                 "player_id": player_id,
                 "roll": d1 + d2,
-            }, True, d1 + d2
+            }, True, d1 + d2, True
 
         player.in_jail_turns += 1
+        player.consecutive_doubles = 0
         return {
             "type": "jail_roll_failed",
             "player_id": player_id,
             "roll": d1 + d2,
-        }, False, None
+        }, False, None, False
 
     def _negotiate_jail_card_purchase(
         self,
@@ -528,26 +589,90 @@ class GameEngine:
                 return tile.index
         return 0
 
-    def _check_bankruptcy(self, state: GameState, player_id: str) -> None:
-        """Check and potentially declare bankruptcy.
-        
-        Players only go bankrupt if their net worth (cash + property value)
-        is insufficient to cover their debt. They may liquidate mortgages first.
+    def _send_to_jail(self, player: PlayerState) -> None:
+        player.pos = self._find_tile_index("Jail")
+        player.in_jail_turns = 1
+        player.consecutive_doubles = 0
+
+    def _charge_player(
+        self,
+        state: GameState,
+        player_id: str,
+        amount: int,
+        creditor_id: Optional[str] = None,
+    ) -> dict:
+        """Charge a player and automatically liquidate assets if needed.
+
+        Bankruptcy rule implemented here:
+        a player is bankrupt only when they cannot pay a required rent,
+        tax, or fine even after selling all houses and mortgaging/selling
+        all properties for their liquidation value.
         """
         player = state.players[player_id]
-        if player.cash >= 0:
-            return 
-        
-        # Calculate net worth (cash + unmortgaged properties)
-        net_worth = self._get_player_net_worth(state, player_id)
-        
-        # If net worth is sufficient, liquidate mortgages to cover debt
-        if net_worth >= abs(player.cash):
-            self._liquidate_mortgages(state, player_id, abs(player.cash))
-            return
-        
-        # Player is bankrupt: lose all properties and assets
+        amount = max(0, int(amount or 0))
+
+        if amount == 0 or player.bankrupt:
+            return {"paid_amount": 0, "bankrupt": player.bankrupt}
+
+        if player.cash < amount:
+            self._liquidate_assets_until_cash_available(state, player_id, amount)
+
+        paid_amount = min(player.cash, amount)
+        player.cash -= paid_amount
+
+        if creditor_id and creditor_id in state.players and not state.players[creditor_id].bankrupt:
+            state.players[creditor_id].cash += paid_amount
+
+        if paid_amount < amount:
+            self._declare_bankrupt(state, player_id)
+            return {"paid_amount": paid_amount, "bankrupt": True}
+
+        return {"paid_amount": paid_amount, "bankrupt": False}
+
+    def _liquidate_assets_until_cash_available(
+        self,
+        state: GameState,
+        player_id: str,
+        target_cash: int,
+    ) -> None:
+        player = state.players[player_id]
+        player_properties = [
+            (idx, p_state, self.config.tiles[idx])
+            for idx, p_state in state.properties.items()
+            if p_state.owner_id == player_id
+        ]
+
+        # Sell buildings first because a player must remove houses before
+        # disposing of the land itself.
+        for tile_index, p_state, tile in player_properties:
+            while p_state.houses > 0 and player.cash < target_cash:
+                p_state.houses -= 1
+                player.cash += max(1, tile.house_cost // 2)
+
+            if p_state.has_hotel and player.cash < target_cash:
+                p_state.has_hotel = False
+                player.cash += max(1, tile.house_cost // 2)
+
+        # Then sell/mortgage properties for half of purchase price. The
+        # property returns to the bank, so bankrupt/exited players do not
+        # keep assets on the board.
+        for tile_index, p_state, tile in player_properties:
+            if player.cash >= target_cash:
+                break
+            if p_state.owner_id == player_id:
+                player.cash += max(1, tile.buy_price // 2)
+                p_state.owner_id = None
+                p_state.houses = 0
+                p_state.has_hotel = False
+                p_state.mortgaged = False
+
+    def _declare_bankrupt(self, state: GameState, player_id: str) -> None:
+        player = state.players[player_id]
         player.bankrupt = True
+        player.cash = 0
+        player.in_jail_turns = 0
+        player.consecutive_doubles = 0
+
         for p_state in state.properties.values():
             if p_state.owner_id == player_id:
                 p_state.owner_id = None
@@ -560,78 +685,6 @@ class GameEngine:
         if len(active) == 1:
             state.winner_id = active[0]
 
-    def _get_player_net_worth(self, state: GameState, player_id: str) -> int:
-        """Calculate player's net worth: cash + unmortgaged property value.
-        
-        Unmortgaged properties are valued at 50% of their purchase price
-        (standard mortgage value in Monopoly).
-        """
-        player_cash = state.players[player_id].cash
-        property_value = 0
-        
-        for tile_index, p_state in state.properties.items():
-            if p_state.owner_id == player_id and not p_state.mortgaged:
-                tile = self.config.tiles[tile_index]
-                # Property value is 50% of purchase price (standard mortgage value)
-                property_value += tile.buy_price // 2
-        
-        return player_cash + property_value
-    
-    def _liquidate_mortgages(self, state: GameState, player_id: str, amount_needed: int) -> None:
-        """Force-sell assets to raise cash for debt payment.
-        
-        Liquidation order (highest rent properties first):
-        1. Sell hotels individually (50% of house cost, since hotel replaces 4 houses)
-        2. Sell houses individually (50% of house cost)
-        3. Mortgage unmortgaged properties (50% of property purchase price)
-        """
-        player = state.players[player_id]
-        amount_raised = 0
-        
-        # Get all player's properties sorted by rent (highest first)
-        player_properties = [
-            (idx, p_state, self.config.tiles[idx])
-            for idx, p_state in state.properties.items()
-            if p_state.owner_id == player_id
-        ]
-        player_properties.sort(
-            key=lambda x: x[2].base_rent,
-            reverse=True
-        )
-        
-        # Sell hotels
-        for tile_index, p_state, tile in player_properties:
-            if amount_raised >= amount_needed:
-                break
-            
-            if p_state.has_hotel and amount_raised < amount_needed:
-                hotel_value = tile.house_cost // 2  # Hotel worth same as single house
-                p_state.has_hotel = False
-                player.cash += hotel_value
-                amount_raised += hotel_value
-
-        # Sell houses
-        for tile_index, p_state, tile in player_properties:
-            if amount_raised >= amount_needed:
-                break
-            
-            while p_state.houses > 0 and amount_raised < amount_needed:
-                house_value = tile.house_cost // 2
-                p_state.houses -= 1
-                player.cash += house_value
-                amount_raised += house_value
-        
-        # Phase 3: Mortgage properties
-        for tile_index, p_state, tile in player_properties:
-            if amount_raised >= amount_needed:
-                break
-            
-            if not p_state.mortgaged and p_state.houses == 0 and not p_state.has_hotel:
-                mortgage_value = tile.buy_price // 2
-                p_state.mortgaged = True
-                player.cash += mortgage_value
-                amount_raised += mortgage_value
-    
     def _advance_turn(self, state: GameState) -> None:
         if not state.turn_order:
             return
