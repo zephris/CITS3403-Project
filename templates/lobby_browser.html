@@ -166,13 +166,7 @@
                                 placeholder="Enter room name" maxlength="80" required>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="lobby-type-select" class="form-label">Lobby Type</label>
-                            <select id="lobby-type-select" name="lobby_type" class="form-select">
-                                <option value="public" selected>Public - visible in lobby browser</option>
-                                <option value="private">Private - join by room code</option>
-                            </select>
-                        </div>
+                        <input type="hidden" name="lobby_type" value="public">
 
                         <div class="mb-3">
                             <label for="max-players-select" class="form-label">Max Players</label>

@@ -1468,7 +1468,7 @@ def create_browser_lobby():
     username = session["username"]
 
     lobby_name = request.form.get("lobby_name", "").strip()
-    lobby_type = request.form.get("lobby_type", "public")
+    lobby_type = "public"
     max_players = int(request.form.get("max_players", 4))
 
     if not lobby_name:
