@@ -24,6 +24,17 @@ def test_singleplayer_game_page_loads(client):
     assert b"Monopoly" in response.data
 
 
+def test_logged_in_singleplayer_game_page_loads(client):
+    with client.session_transaction() as session_data:
+        session_data["username"] = "logged_in_player"
+
+    response = client.get("/singleplayer", follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b"Monopoly" in response.data
+    assert b"logged_in_player" in response.data
+
+
 def test_roll_dice_route_works(client):
     client.get("/singleplayer", follow_redirects=True)
 

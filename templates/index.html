@@ -341,6 +341,36 @@
             }
         }
 
+        @media (min-width: 992px) {
+            body[data-game-mode="singleplayer"] #game-sidebar {
+                position: sticky;
+                top: 12px;
+                align-self: flex-start;
+            }
+        }
+
+        body[data-game-mode="singleplayer"] .event-card-area,
+        body[data-game-mode="singleplayer"] .game-chat-card {
+            display: none !important;
+        }
+
+        body[data-game-mode="singleplayer"] .center-space {
+            justify-content: flex-start;
+            gap: 5px;
+            padding-top: 12px !important;
+        }
+
+        body[data-game-mode="singleplayer"] .center-space h2 {
+            margin-top: 0.1rem !important;
+        }
+
+        body[data-game-mode="singleplayer"] .turn-status,
+        body[data-game-mode="singleplayer"] .dice-result,
+        body[data-game-mode="singleplayer"] .house-panel,
+        body[data-game-mode="singleplayer"] .jail-action-panel {
+            max-width: 100%;
+        }
+
     </style>
 
 <script>
@@ -576,6 +606,8 @@
                                     Choose Buy or Skip before rolling again.
                                     {% endif %}
                                 </div>
+                                {% endif %}
+                                {% endif %}
                             <div data-tile-position="13" class="tile 
                                 {% if position == 13 %}active-tile{% endif %}
                                 {% if property_owners.get(13) == 'player1' %}owned-player{% endif %}
