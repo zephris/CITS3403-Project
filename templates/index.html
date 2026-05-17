@@ -35,6 +35,312 @@
         .house-panel strong {
             color: #14532d;
         }
+
+
+        /* Responsive board and sidebar cleanup
+           Goal: keep the board readable on desktop and mobile without clipped text. */
+        html,
+        body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            background: #eef3e8;
+        }
+
+        .navbar {
+            margin-bottom: 12px !important;
+        }
+
+        .navbar-brand {
+            font-size: clamp(1rem, 2.4vw, 1.25rem) !important;
+            white-space: normal;
+            line-height: 1.15;
+        }
+
+        #game-board-panel .card,
+        #game-sidebar .card {
+            border: 0;
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        #game-board-panel .card-body {
+            padding: 10px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .monopoly-board {
+            width: min(100%, 980px);
+            max-width: 980px;
+            min-width: 760px;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+        }
+
+        .tile {
+            overflow: hidden;
+            padding: 4px 3px !important;
+            text-align: center;
+            line-height: 1.05;
+            word-break: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .tile .title,
+        .tile .price,
+        .tile .non-prop-title {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+            line-height: 1.05;
+            text-align: center;
+        }
+
+        .tile .title,
+        .tile .non-prop-title {
+            font-size: clamp(0.56rem, 0.72vw, 0.76rem) !important;
+            font-weight: 700;
+        }
+
+        .tile .price {
+            font-size: clamp(0.55rem, 0.7vw, 0.74rem) !important;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        .tile.corner {
+            font-size: clamp(0.62rem, 0.85vw, 0.88rem) !important;
+            font-weight: 800;
+        }
+
+        .tile.corner .fs-4,
+        .tile.corner .fs-5 {
+            font-size: clamp(0.95rem, 1.55vw, 1.35rem) !important;
+            line-height: 1;
+        }
+
+        .color-bar {
+            min-height: 8px;
+            flex-shrink: 0;
+        }
+
+        .player-token,
+        .ai-token,
+        .multi-player-token {
+            z-index: 55;
+        }
+
+        .center-space {
+            padding: clamp(8px, 1.5vw, 20px) !important;
+            overflow: hidden;
+        }
+
+        .center-space h2 {
+            font-size: clamp(1.8rem, 4.6vw, 4.4rem) !important;
+            margin-bottom: 0.45rem !important;
+            letter-spacing: clamp(2px, 0.7vw, 5px) !important;
+        }
+
+        .center-space h4 {
+            font-size: clamp(0.95rem, 2vw, 1.35rem) !important;
+            margin-bottom: 0.85rem !important;
+        }
+
+        .event-card-area {
+            gap: clamp(8px, 1.4vw, 20px) !important;
+            margin-bottom: 0.75rem !important;
+        }
+
+        .event-card {
+            max-width: 190px;
+            min-height: 110px;
+            padding: 10px !important;
+        }
+
+        .event-card-title {
+            font-size: clamp(0.82rem, 1.4vw, 1.1rem) !important;
+            line-height: 1.1;
+        }
+
+        .event-card-subtitle {
+            font-size: clamp(0.62rem, 1vw, 0.78rem) !important;
+            line-height: 1.1;
+        }
+
+        #roll-button,
+        .center-space .btn {
+            white-space: normal;
+            line-height: 1.1;
+            border-radius: 999px;
+        }
+
+        .dice-result,
+        .turn-status,
+        .center-space p,
+        .house-panel,
+        .jail-action-panel {
+            max-width: min(92%, 420px);
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.25;
+            word-break: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .compact-game-log-body,
+        .game-chat-body,
+        .property-sidebar-body {
+            overflow-wrap: anywhere;
+            word-break: normal;
+        }
+
+        .compact-game-log-body p,
+        .game-chat-body p {
+            line-height: 1.25;
+        }
+
+        .property-sidebar-section + .property-sidebar-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .property-sidebar-title {
+            font-weight: 800;
+            margin-bottom: 3px;
+        }
+
+        .property-sidebar-text,
+        .property-sidebar-empty {
+            color: #6b7280;
+            font-size: 0.9rem;
+            line-height: 1.3;
+        }
+
+        @media (min-width: 1200px) {
+            .container-fluid.px-4 {
+                padding-left: 18px !important;
+                padding-right: 18px !important;
+            }
+
+            .compact-game-log-body {
+                height: 190px !important;
+            }
+
+            .game-chat-body {
+                height: 150px !important;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .container-fluid.px-4 {
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+            }
+
+            #game-board-panel {
+                margin-bottom: 12px !important;
+            }
+
+            #game-sidebar .card {
+                margin-bottom: 12px !important;
+            }
+
+            .compact-game-log-body {
+                height: 150px !important;
+            }
+
+            .game-chat-body {
+                height: 130px !important;
+            }
+
+            .property-sidebar-body {
+                padding: 12px !important;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .navbar .container-fluid {
+                gap: 8px;
+                align-items: center;
+            }
+
+            #game-board-panel .card-body {
+                padding: 6px;
+            }
+
+            .monopoly-board {
+                min-width: 720px;
+            }
+
+            .event-card-area {
+                display: none !important;
+            }
+
+            .center-space h2 {
+                font-size: 1.7rem !important;
+                margin-bottom: 0.25rem !important;
+            }
+
+            .center-space h4 {
+                font-size: 0.9rem !important;
+                margin-bottom: 0.45rem !important;
+            }
+
+            .center-space p,
+            .dice-result,
+            .turn-status {
+                font-size: 0.78rem !important;
+                margin-top: 0.35rem !important;
+                margin-bottom: 0.35rem !important;
+            }
+
+            #roll-button {
+                font-size: 0.9rem !important;
+                padding: 0.45rem 0.9rem !important;
+            }
+
+            .tile .title,
+            .tile .non-prop-title {
+                font-size: 0.58rem !important;
+            }
+
+            .tile .price {
+                font-size: 0.56rem !important;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .monopoly-board {
+                min-width: 680px;
+            }
+
+            .tile {
+                padding: 3px 2px !important;
+            }
+
+            .tile .title,
+            .tile .non-prop-title {
+                font-size: 0.54rem !important;
+            }
+
+            .tile .price {
+                font-size: 0.52rem !important;
+            }
+
+            .house-stack {
+                bottom: 27px;
+                font-size: 0.58rem;
+            }
+        }
+
     </style>
 
 </head>
@@ -798,24 +1104,102 @@
                     </ul>
                 </div>
 
-                <div class="card shadow-sm mb-4 compact-log-card">
-                    <div class="card-header bg-secondary text-white fw-bold">
-                        📜 Game Log
+                <div class="card shadow-sm mb-4 game-log-card">
+                    <div class="card-header game-log-header">
+                        <span>📜 Game Log</span>
+                        <small>{{ game_log|length }} events</small>
                     </div>
-                    <div class="card-body compact-game-log-body"
-                        style="height: 220px; overflow-y: auto; background-color: #f8f9fa;">
-                        <p class="mb-1 text-muted"><small>System: The game has started!</small></p>
-                        {% for log in game_log|reverse %}
-                        <p class="mb-1">
-                            <small>{{ log }}</small>
+
+                    <div class="card-body game-log-body">
+                        {% if game_log %}
+                            {% for log in game_log|reverse %}
+                                {% if log is mapping %}
+                                    {% set log_type = log.type|default('info') %}
+                                    {% set log_message = log.message|default('') %}
+                                {% else %}
+                                    {% set log_type = 'info' %}
+                                    {% set log_message = log %}
+                                {% endif %}
+
+                                <div class="game-log-item game-log-{{ log_type|replace('_', '-') }}">
+                                    <div class="game-log-icon">
+                                        {% if log_type in ['property_bought'] %}
+                                            🟢
+                                        {% elif log_type in ['property_sold', 'house_sold', 'property_skipped'] %}
+                                            🟠
+                                        {% elif log_type in ['rent_paid', 'tax_paid', 'jail_paid_fine', 'jail_forced_release'] %}
+                                            🔴
+                                        {% elif log_type in ['go_to_jail', 'go_to_jail_double', 'jail_roll_failed', 'jail_roll_doubles', 'jail_used_card', 'jail_bought_card', 'jail_buy_failed', 'jail_release'] %}
+                                            🚔
+                                        {% elif log_type in ['card_drawn', 'card_none'] %}
+                                            🎴
+                                        {% elif log_type in ['house_built'] %}
+                                            🏠
+                                        {% elif log_type in ['game_over'] %}
+                                            🏆
+                                        {% elif log_type in ['restart_requested', 'restart_agreed'] %}
+                                            🔄
+                                        {% elif log_type in ['action_blocked'] %}
+                                            ⚠️
+                                        {% elif log_type in ['system', 'no_action', 'landed_own_property'] %}
+                                            ℹ️
+                                        {% else %}
+                                            🎲
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="game-log-text">
+                                        <div class="game-log-message">{{ log_message }}</div>
+                                        <div class="game-log-type">
+                                            {% if loop.first %}
+                                                Latest event
+                                            {% else %}
+                                                {{ log_type|replace('_', ' ')|title }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="game-log-empty">
+                                No game events yet.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4 game-chat-card">
+                    <div class="card-header bg-dark text-white fw-bold">
+                        💬 Game Chat
+                    </div>
+                    <div class="card-body game-chat-body"
+                        style="height: 180px; overflow-y: auto; background-color: #f8f9fa;">
+                        {% if game_chat_messages %}
+                        {% for message in game_chat_messages %}
+                        <p class="mb-2">
+                            <small>
+                                <strong>{{ message.sender }}:</strong>
+                                {{ message.text }}
+                            </small>
                         </p>
                         {% endfor %}
+                        {% else %}
+                        <p class="mb-1 text-muted">
+                            <small>No messages yet.</small>
+                        </p>
+                        {% endif %}
                     </div>
                     <div class="card-footer">
-                        <div class="input-group input-group-sm">
-                            <input type="text" class="form-control" placeholder="Type a message...">
-                            <button class="btn btn-outline-secondary" type="button">Send</button>
-                        </div>
+                        <form class="ajax-action-form" data-action-name="Sending..."
+                            action="{{ url_for('game_chat') }}" method="post">
+                            <div class="input-group input-group-sm">
+                                <input type="text" name="message" class="form-control"
+                                    placeholder="Type a message..." autocomplete="off" required>
+                                <button class="btn btn-outline-secondary" type="submit">
+                                    Send
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
@@ -823,74 +1207,102 @@
                     <div class="card-header bg-success text-white fw-bold">
                         🏠 Property Management
                     </div>
+
                     <div class="card-body property-sidebar-body">
-                        {% if not waiting_for_ai and can_control_current_action and (can_build_house or can_sell_house
-                        or can_sell_property) %}
-                        {% if can_build_house %}
-                        <div class="property-sidebar-section">
-                            <div class="property-sidebar-title">Build House</div>
-                            <div class="property-sidebar-text">Build houses on properties you own.</div>
-                            <form class="ajax-action-form mt-2" data-action-name="Building..."
-                                action="{{ url_for('build_house') }}" method="post">
-                                <select name="tile_index" class="form-select form-select-sm mb-2">
-                                    {% for build_property in buildable_house_properties %}
-                                    <option value="{{ build_property.tile_index }}">
-                                        {{ build_property.name }} — {{ build_property.houses }}/{{ max_houses }} houses,
-                                        ${{ build_property.cost }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                                <button type="submit" class="btn btn-success btn-sm w-100">
-                                    🏠 Build House
-                                </button>
-                            </form>
-                        </div>
-                        {% endif %}
+                        {% if not waiting_for_ai and can_control_current_action and (can_build_house or needs_cash) %}
 
-                        {% if can_sell_house %}
-                        <div class="property-sidebar-section">
-                            <div class="property-sidebar-title">Sell House</div>
-                            <div class="property-sidebar-text">Sell one house to raise cash.</div>
-                            <form class="ajax-action-form mt-2" data-action-name="Selling..."
-                                action="{{ url_for('sell_house') }}" method="post">
-                                <select name="tile_index" class="form-select form-select-sm mb-2">
-                                    {% for house_property in sellable_house_properties %}
-                                    <option value="{{ house_property.tile_index }}">
-                                        {{ house_property.name }} — {{ house_property.houses }} house(s), +${{
-                                        house_property.sell_value }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                                <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
-                                    Sell 1 House
-                                </button>
-                            </form>
-                        </div>
-                        {% endif %}
+                            {% if needs_cash %}
+                            <div class="alert alert-warning py-2 small mb-3">
+                                ⚠️ You are low on cash. You can sell houses or properties to raise money.
+                            </div>
+                            {% endif %}
 
-                        {% if can_sell_property %}
-                        <div class="property-sidebar-section">
-                            <div class="property-sidebar-title">Sell Property</div>
-                            <div class="property-sidebar-text">Sell an owned property back to the bank.</div>
-                            <form class="ajax-action-form mt-2" data-action-name="Selling..."
-                                action="{{ url_for('sell_property') }}" method="post">
-                                <select name="tile_index" class="form-select form-select-sm mb-2">
-                                    {% for property in sellable_properties %}
-                                    <option value="{{ property.tile_index }}">
-                                        {{ property.name }} — +${{ property.sell_value }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                                    Sell Property
-                                </button>
-                            </form>
-                        </div>
-                        {% endif %}
+                            {% if can_build_house %}
+                            <div class="property-sidebar-section">
+                                <div class="property-sidebar-title">Build House</div>
+                                <div class="property-sidebar-text">
+                                    You can build a house only after landing on this owned property for the second time or later.
+                                </div>
+
+                                <form class="ajax-action-form mt-2" data-action-name="Building..."
+                                    action="{{ url_for('build_house') }}" method="post">
+                                    <select name="tile_index" class="form-select form-select-sm mb-2">
+                                        {% for build_property in buildable_house_properties %}
+                                        <option value="{{ build_property.tile_index }}">
+                                            {{ build_property.name }} —
+                                            {{ build_property.houses }}/{{ max_houses }} houses,
+                                            ${{ build_property.cost }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                        🏠 Build House
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+
+                            {% if needs_cash and can_sell_house %}
+                            <div class="property-sidebar-section">
+                                <div class="property-sidebar-title">Sell House</div>
+                                <div class="property-sidebar-text">
+                                    Choose which property you want to sell one house from.
+                                </div>
+
+                                <form class="ajax-action-form mt-2" data-action-name="Selling..."
+                                    action="{{ url_for('sell_house') }}" method="post">
+                                    <select name="tile_index" class="form-select form-select-sm mb-2">
+                                        {% for house_property in sellable_house_properties %}
+                                        <option value="{{ house_property.tile_index }}">
+                                            {{ house_property.name }} —
+                                            {{ house_property.houses }} house(s),
+                                            +${{ house_property.sell_value }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
+                                        Sell 1 House
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+
+                            {% if needs_cash and can_sell_property %}
+                            <div class="property-sidebar-section">
+                                <div class="property-sidebar-title">Sell Property</div>
+                                <div class="property-sidebar-text">
+                                    Sell an owned property back to the bank when you need cash.
+                                </div>
+
+                                <form class="ajax-action-form mt-2" data-action-name="Selling..."
+                                    action="{{ url_for('sell_property') }}" method="post">
+                                    <select name="tile_index" class="form-select form-select-sm mb-2">
+                                        {% for property in sellable_properties %}
+                                        <option value="{{ property.tile_index }}">
+                                            {{ property.name }} — +${{ property.sell_value }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                        Sell Property
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+
+                            {% if needs_cash and not can_sell_house and not can_sell_property %}
+                            <div class="property-sidebar-empty">
+                                You need cash, but you do not have any houses or properties available to sell.
+                            </div>
+                            {% endif %}
+
                         {% else %}
-                        <div class="property-sidebar-empty">
-                            No property actions available right now.
-                        </div>
+                            <div class="property-sidebar-empty">
+                                No property actions available right now.
+                            </div>
                         {% endif %}
                     </div>
                 </div>

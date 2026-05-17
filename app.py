@@ -27,7 +27,8 @@ current_game_players = list(players)
 game_id = "local_demo_game"
 
 game_state = engine.initialize_game(players)
-game_log = ["Game started! Player 1 is on GO."]
+game_log = [{"type": "system", "message": "Game started! Player 1 is on GO."}]
+game_chat_messages = []
 last_roll = None
 can_buy = False
 game_over = False
@@ -50,10 +51,221 @@ pending_jail_purchases = {}
 # Local house tracking for Shuo's enhanced UI.
 # Key: tile index, Value: number of houses on that property.
 property_houses = {}
+
+# Record how many times each player has landed on each property.
+# Key format: "player_id:tile_index"
+property_landing_counts = {}
+
 MAX_HOUSES_PER_PROPERTY = 4
 HOUSE_COST = 50
 HOUSE_RENT_BONUS = 25
 HOUSE_SELL_VALUE = 25
+
+# When cash is below this number, the sell-house / sell-property panel appears.
+LOW_CASH_SELL_THRESHOLD = HOUSE_COST
+
+# -----------------------------------------------------------------------------
+# Per-game runtime storage
+# -----------------------------------------------------------------------------
+# The original prototype kept these values as one set of module-level globals:
+# game_state, game_log, game_chat_messages, property_houses, restart_votes, etc.
+# That means two rooms could accidentally share the same board state.  This
+# dictionary keeps a separate runtime object for each game_id.  The existing
+# helper functions can still use the same variable names because each game route
+# activates the correct runtime before handling the request and saves it after.
+game_contexts = {}
+active_context_game_id = game_id
+
+GAME_RUNTIME_ENDPOINTS = {
+    "singleplayer",
+    "start_lobby_game_from_lobby",
+    "start_lobby_game",
+    "game_state_status",
+    "game_chat",
+    "leave_game_room",
+    "game_page",
+    "roll_dice",
+    "buy_property",
+    "skip_buy",
+    "ai_turn",
+    "jail_pay_fine",
+    "jail_use_card",
+    "jail_buy_card",
+    "build_house",
+    "sell_house",
+    "sell_property",
+    "reset_game",
+}
+
+
+
+
+def make_game_log_entry(log_type, message, metadata=None):
+    """Create a structured game-log entry for the UI.
+
+    The UI reads `type` to choose icons/colours and `message` to display text.
+    `metadata` is optional and can be used later for analytics or filtering.
+    """
+    if isinstance(message, dict):
+        # Already structured. Keep it compatible with old and new callers.
+        return {
+            "type": message.get("type", log_type or "info"),
+            "message": message.get("message", ""),
+            "metadata": message.get("metadata", metadata or {}),
+        }
+
+    return {
+        "type": log_type or "info",
+        "message": str(message),
+        "metadata": metadata or {},
+    }
+
+
+def append_game_log(log_type, message=None, metadata=None):
+    """Append a structured log entry.
+
+    Supports both append_game_log("message") and
+    append_game_log("type", "message").
+    """
+    if message is None:
+        message = log_type
+        log_type = "info"
+
+    if message:
+        game_log.append(make_game_log_entry(log_type, message, metadata))
+
+
+def get_log_message(log_entry):
+    """Return the displayable message from either new dict logs or old strings."""
+    if isinstance(log_entry, dict):
+        return log_entry.get("message", "")
+    return str(log_entry)
+
+
+def normalize_game_log(log_entries):
+    """Convert any legacy string log entries into structured dictionaries."""
+    return [
+        entry if isinstance(entry, dict) else make_game_log_entry("info", entry)
+        for entry in log_entries
+    ]
+
+
+def make_game_context(game_id_value, game_players=None, start_message=None):
+    if game_players is None:
+        game_players = list(players)
+
+    if start_message is None:
+        start_message = f"Game started! {game_players[0]['name']} is on GO."
+
+    return {
+        "game_id": game_id_value,
+        "game_state": engine.initialize_game(game_players),
+        "game_log": [make_game_log_entry("system", start_message)],
+        "game_chat_messages": [],
+        "last_roll": None,
+        "can_buy": False,
+        "game_over": False,
+        "waiting_for_ai": False,
+        "restart_votes": set(),
+        "pending_buy_player_id": None,
+        "pending_buy_tile_index": None,
+        "pending_jail_actions": {},
+        "pending_jail_purchases": {},
+        "property_houses": {},
+        "property_landing_counts": {},
+        "current_game_players": list(game_players),
+    }
+
+
+def activate_game_context(game_id_value=None):
+    """Load the selected game runtime into the variables used by existing code."""
+    global active_context_game_id, game_id, game_state, game_log, game_chat_messages
+    global last_roll, can_buy, game_over, waiting_for_ai, restart_votes
+    global pending_buy_player_id, pending_buy_tile_index
+    global pending_jail_actions, pending_jail_purchases
+    global property_houses, property_landing_counts, current_game_players
+
+    if not game_id_value:
+        game_id_value = session.get("active_game_id") or game_id or "local_demo_game"
+
+    if game_id_value not in game_contexts:
+        game_contexts[game_id_value] = make_game_context(
+            game_id_value,
+            current_game_players or players,
+        )
+
+    context = game_contexts[game_id_value]
+    active_context_game_id = game_id_value
+    game_id = context["game_id"]
+    game_state = context["game_state"]
+    game_log = normalize_game_log(context["game_log"])
+    game_chat_messages = context["game_chat_messages"]
+    last_roll = context["last_roll"]
+    can_buy = context["can_buy"]
+    game_over = context["game_over"]
+    waiting_for_ai = context["waiting_for_ai"]
+    restart_votes = context["restart_votes"]
+    pending_buy_player_id = context["pending_buy_player_id"]
+    pending_buy_tile_index = context["pending_buy_tile_index"]
+    pending_jail_actions = context["pending_jail_actions"]
+    pending_jail_purchases = context["pending_jail_purchases"]
+    property_houses = context["property_houses"]
+    property_landing_counts = context["property_landing_counts"]
+    current_game_players = context["current_game_players"]
+
+    session["active_game_id"] = game_id_value
+
+
+def save_active_game_context():
+    """Persist the currently active globals back into the per-game dictionary."""
+    if not active_context_game_id:
+        return
+
+    game_contexts[active_context_game_id] = {
+        "game_id": game_id,
+        "game_state": game_state,
+        "game_log": game_log,
+        "game_chat_messages": game_chat_messages,
+        "last_roll": last_roll,
+        "can_buy": can_buy,
+        "game_over": game_over,
+        "waiting_for_ai": waiting_for_ai,
+        "restart_votes": restart_votes,
+        "pending_buy_player_id": pending_buy_player_id,
+        "pending_buy_tile_index": pending_buy_tile_index,
+        "pending_jail_actions": pending_jail_actions,
+        "pending_jail_purchases": pending_jail_purchases,
+        "property_houses": property_houses,
+        "property_landing_counts": property_landing_counts,
+        "current_game_players": current_game_players,
+    }
+
+
+def get_request_game_id():
+    if request.view_args and request.view_args.get("game_id"):
+        return request.view_args.get("game_id")
+
+    if request.view_args and request.view_args.get("lobby_id") is not None:
+        lobby_id = request.view_args.get("lobby_id")
+        if request.endpoint == "start_lobby_game_from_lobby":
+            return f"lobby_{lobby_id}_game"
+
+    return session.get("active_game_id") or game_id
+
+
+@app.before_request
+def load_game_context_for_request():
+    if request.endpoint in GAME_RUNTIME_ENDPOINTS:
+        activate_game_context(get_request_game_id())
+
+
+@app.after_request
+def save_game_context_after_request(response):
+    if request.endpoint in GAME_RUNTIME_ENDPOINTS:
+        save_active_game_context()
+    return response
+
+game_contexts[game_id] = make_game_context(game_id, current_game_players, get_log_message(game_log[0]))
 
 lobby_demo_state = {
     "player2_ready": False,
@@ -415,7 +627,7 @@ def check_game_over():
 
     if game_state.winner_id and not game_over:
         game_over = True
-        game_log.append(f"Game over! Winner: {format_player_name(game_state.winner_id)}")
+        append_game_log("game_over", f"Game over! Winner: {format_player_name(game_state.winner_id)}")
         finalize_game()
 
 
@@ -440,7 +652,7 @@ def play_ai_turns_until_player():
         text = format_event(ai_event)
 
         if text and "landed on GO" not in text:
-            game_log.append(text)
+            append_game_log(ai_event.get("type", "ai_turn"), text)
 
         check_game_over()
         safety_counter += 1
@@ -490,17 +702,140 @@ def get_restart_vote_names():
 def get_active_player_id():
     return game_state.turn_order[game_state.current_turn_index]
 
+def make_property_landing_key(player_id, tile_index):
+    return f"{player_id}:{tile_index}"
+
+
+def record_property_landing(player_id, tile_index):
+    key = make_property_landing_key(player_id, tile_index)
+    property_landing_counts[key] = property_landing_counts.get(key, 0) + 1
+
+
+def get_property_landing_count(player_id, tile_index):
+    key = make_property_landing_key(player_id, tile_index)
+    return property_landing_counts.get(key, 0)
+
+
+def player_needs_cash(player_id):
+    player = game_state.players.get(player_id)
+    if player is None:
+        return False
+
+    return player.cash < LOW_CASH_SELL_THRESHOLD
+
+
+def perform_ai_property_management(ai_player_id):
+    """
+    AI randomly builds houses and sells houses/properties.
+    This never shows a UI panel because it is handled fully by backend logic.
+    """
+    if not ai_player_id.startswith("ai"):
+        return
+
+    player = game_state.players.get(ai_player_id)
+    if player is None or player.bankrupt:
+        return
+
+    owned_properties = [
+        tile_index
+        for tile_index, property_state in game_state.properties.items()
+        if property_state.owner_id == ai_player_id
+    ]
+
+    if not owned_properties:
+        return
+
+    # If AI has low cash, randomly sell one house first.
+    if player_needs_cash(ai_player_id):
+        house_properties = [
+            tile_index
+            for tile_index in owned_properties
+            if game_state.properties[tile_index].houses > 0
+            or property_houses.get(tile_index, 0) > 0
+        ]
+
+        if house_properties and random.choice([True, False]):
+            tile_index = random.choice(house_properties)
+            property_state = game_state.properties[tile_index]
+            current_houses = property_state.houses or property_houses.get(tile_index, 0)
+
+            property_state.houses = max(0, current_houses - 1)
+
+            if property_state.houses > 0:
+                property_houses[tile_index] = property_state.houses
+            else:
+                property_houses.pop(tile_index, None)
+
+            player.cash += HOUSE_SELL_VALUE
+            append_game_log(
+                "house_sold",
+                f"{format_player_name(ai_player_id)} sold one house on "
+                f"{config.tiles[tile_index].name} for ${HOUSE_SELL_VALUE}."
+            )
+            return
+
+        # If there is no house to sell, AI may sell one property.
+        if owned_properties:
+            tile_index = random.choice(owned_properties)
+            tile = config.tiles[tile_index]
+            property_state = game_state.properties[tile_index]
+            house_count = property_state.houses or property_houses.get(tile_index, 0)
+            sell_value = (tile.buy_price // 2) + (house_count * HOUSE_SELL_VALUE)
+
+            player.cash += sell_value
+            property_state.owner_id = None
+            property_state.houses = 0
+            property_state.has_hotel = False
+            property_state.mortgaged = False
+            property_houses.pop(tile_index, None)
+
+            append_game_log(
+                "property_sold",
+                f"{format_player_name(ai_player_id)} sold {tile.name} for ${sell_value}."
+            )
+            return
+
+    # If AI has enough money, it may randomly build a house.
+    buildable_properties = []
+    for tile_index in owned_properties:
+        property_state = game_state.properties[tile_index]
+        house_count = property_state.houses or property_houses.get(tile_index, 0)
+        landing_count = get_property_landing_count(ai_player_id, tile_index)
+
+        if (
+            landing_count >= 2
+            and house_count < MAX_HOUSES_PER_PROPERTY
+            and player.cash >= HOUSE_COST
+        ):
+            buildable_properties.append(tile_index)
+
+    if buildable_properties and random.choice([True, False]):
+        tile_index = random.choice(buildable_properties)
+        property_state = game_state.properties[tile_index]
+        house_count = property_state.houses or property_houses.get(tile_index, 0)
+
+        player.cash -= HOUSE_COST
+        property_state.houses = house_count + 1
+        property_houses[tile_index] = property_state.houses
+
+        append_game_log(
+            "house_built",
+            f"{format_player_name(ai_player_id)} built a house on "
+            f"{config.tiles[tile_index].name}."
+        )
+
 
 def get_active_property_info():
     """
     Build the data used by the property-management panel.
 
-    Important change:
-    - Building houses is no longer tied to landing on the same property again.
-    - Any property owned by the current player can be improved from the side panel.
-    - Selling houses/properties is also handled from the same panel.
+    New rules:
+    - A player can build a house only after landing on their owned property
+      for the second time or later.
+    - Selling houses/properties is only available when the player has low cash.
+    - AI property management is handled automatically in backend logic.
     """
-    tile = get_pending_buy_tile() or get_visible_tile()
+    tile = get_visible_tile()
     current_user_player_id = get_current_user_player_id()
     player = game_state.players[current_user_player_id]
 
@@ -513,55 +848,75 @@ def get_active_property_info():
         "sellable_house_properties": [],
         "sellable_properties": [],
         "active_property_player_name": format_player_name(current_user_player_id),
+        "needs_cash": player_needs_cash(current_user_player_id),
     }
 
     if tile.tile_type == "property":
         property_state = game_state.properties[tile.index]
         synced_houses = property_state.houses or property_houses.get(tile.index, 0)
         property_state.houses = synced_houses
+
         if synced_houses > 0:
             property_houses[tile.index] = synced_houses
         else:
             property_houses.pop(tile.index, None)
+
         info["house_count"] = synced_houses
 
-    # Do not allow other actions while the current player still has to decide Buy/Skip.
     management_allowed = (
         not waiting_for_ai
         and not game_over
         and not can_buy
+        and current_user_can_act()
     )
 
-    for tile_index, property_state in game_state.properties.items():
-        if property_state.owner_id != current_user_player_id:
-            continue
+    # Build house:
+    # Only on the property the player is currently standing on,
+    # only if the player owns it,
+    # only after the second landing.
+    if tile.tile_type == "property":
+        property_state = game_state.properties[tile.index]
+        house_count = property_state.houses or property_houses.get(tile.index, 0)
+        landing_count = get_property_landing_count(current_user_player_id, tile.index)
 
-        tile_obj = config.tiles[tile_index]
-        house_count = property_state.houses or property_houses.get(tile_index, 0)
-        property_state.houses = house_count
-        if house_count > 0:
-            property_houses[tile_index] = house_count
-        else:
-            property_houses.pop(tile_index, None)
-
-        if management_allowed and house_count < MAX_HOUSES_PER_PROPERTY and player.cash >= HOUSE_COST:
+        if (
+            management_allowed
+            and property_state.owner_id == current_user_player_id
+            and landing_count >= 2
+            and house_count < MAX_HOUSES_PER_PROPERTY
+            and player.cash >= HOUSE_COST
+        ):
             info["buildable_house_properties"].append({
-                "tile_index": tile_index,
-                "name": tile_obj.name,
+                "tile_index": tile.index,
+                "name": tile.name,
                 "houses": house_count,
                 "next_houses": house_count + 1,
                 "cost": HOUSE_COST,
+                "landing_count": landing_count,
             })
 
-        if management_allowed and house_count > 0:
-            info["sellable_house_properties"].append({
-                "tile_index": tile_index,
-                "name": tile_obj.name,
-                "houses": house_count,
-                "sell_value": HOUSE_SELL_VALUE,
-            })
+    # Sell house / property:
+    # Only when the player needs cash.
+    if management_allowed and player_needs_cash(current_user_player_id):
+        for tile_index, property_state in game_state.properties.items():
+            if property_state.owner_id != current_user_player_id:
+                continue
 
-        if management_allowed:
+            tile_obj = config.tiles[tile_index]
+            house_count = property_state.houses or property_houses.get(tile_index, 0)
+            property_state.houses = house_count
+
+            if house_count > 0:
+                property_houses[tile_index] = house_count
+                info["sellable_house_properties"].append({
+                    "tile_index": tile_index,
+                    "name": tile_obj.name,
+                    "houses": house_count,
+                    "sell_value": HOUSE_SELL_VALUE,
+                })
+            else:
+                property_houses.pop(tile_index, None)
+
             info["sellable_properties"].append({
                 "tile_index": tile_index,
                 "name": tile_obj.name,
@@ -650,10 +1005,13 @@ def process_active_turn(dice_result_for_response=False):
         last_roll = event.get("roll")
     else:
         last_roll = (new_position - old_position) % len(config.tiles)
+    landed_tile = config.tiles[new_position]
+    if landed_tile.tile_type == "property":
+        record_property_landing(acting_player_id, landed_tile.index)
 
     text = format_event(event)
     if text:
-        game_log.append(text)
+        append_game_log(event.get("type", "info"), text)
 
     maybe_create_pending_buy(acting_player_id)
     check_game_over()
@@ -704,6 +1062,7 @@ def build_game_template_context(dice_result=None):
         "all_players_json": json.dumps(all_players),
         "dice_result": dice_result,
         "game_log": game_log,
+        "game_chat_messages": game_chat_messages,
         "can_buy": can_buy and pending_buy_player_id == current_user_player_id,
         "property_price": property_price,
         "owner": owner,
@@ -732,6 +1091,7 @@ def build_game_template_context(dice_result=None):
         "sellable_properties": active_info["sellable_properties"],
         "can_sell_property": active_info["can_sell_property"],
         "active_property_player_name": active_info["active_property_player_name"],
+        "needs_cash": active_info["needs_cash"],
 
         # Multiplayer restart voting.
         "restart_votes_count": len(restart_votes),
@@ -778,7 +1138,7 @@ def ajax_dice_response(dice_result=None):
         "dice_one": dice_one,
         "dice_two": dice_two,
         "dice_result": dice_result or last_roll or (dice_one + dice_two),
-        "html": render_game_html(dice_result),
+        "html": render_game_html(),
     })
 
 
@@ -795,16 +1155,19 @@ def home():
 
 @app.route("/singleplayer")
 def singleplayer():
-    global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, game_id
-    global property_houses, current_game_players, restart_votes
+    global game_state, game_log, game_chat_messages, last_roll, can_buy, game_over, waiting_for_ai, game_id
+    global property_houses, property_landing_counts, current_game_players, restart_votes, active_context_game_id
 
     game_id = "local_demo_game"
+    active_context_game_id = game_id
+    session["active_game_id"] = game_id
     current_game_players = [
         {"player_id": "player1", "name": session.get("username", "Player 1")},
         {"player_id": "ai_1", "name": "AI Player"},
     ]
     game_state = engine.initialize_game(current_game_players)
-    game_log = ["Singleplayer game started! Player 1 is on GO."]
+    game_log = [make_game_log_entry("system", "Singleplayer game started! Player 1 is on GO.")]
+    game_chat_messages = []
     last_roll = None
     clear_pending_buy()
     pending_jail_actions.clear()
@@ -812,6 +1175,7 @@ def singleplayer():
     game_over = False
     waiting_for_ai = False
     property_houses = {}
+    property_landing_counts = {}
     restart_votes = set()
 
     return redirect(url_for("game_page", game_id=game_id))
@@ -1395,8 +1759,8 @@ def lobby_chat(lobby_id):
 
 @app.route("/lobby/<int:lobby_id>/start", methods=["POST"])
 def start_lobby_game_from_lobby(lobby_id):
-    global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, game_id
-    global current_game_players, property_houses, restart_votes
+    global game_state, game_log, game_chat_messages, last_roll, can_buy, game_over, waiting_for_ai, game_id
+    global current_game_players, property_houses, property_landing_counts, restart_votes, active_context_game_id
 
     if "username" not in session:
         return redirect(url_for("login"))
@@ -1449,6 +1813,8 @@ def start_lobby_game_from_lobby(lobby_id):
     db.session.commit()
 
     game_id = f"lobby_{lobby.id}_game"
+    active_context_game_id = game_id
+    session["active_game_id"] = game_id
 
     ordered_lobby_players = sorted(
         players_in_lobby,
@@ -1463,7 +1829,8 @@ def start_lobby_game_from_lobby(lobby_id):
     ]
 
     game_state = engine.initialize_game(current_game_players)
-    game_log = [f"Game started from lobby: {lobby.name}. {current_game_players[0]['name']} is on GO."]
+    game_log = [make_game_log_entry("system", f"Game started from lobby: {lobby.name}. {current_game_players[0]['name']} is on GO.")]
+    game_chat_messages = []
     last_roll = None
     clear_pending_buy()
     pending_jail_actions.clear()
@@ -1471,6 +1838,7 @@ def start_lobby_game_from_lobby(lobby_id):
     game_over = False
     waiting_for_ai = False
     property_houses = {}
+    property_landing_counts = {}
     restart_votes = set()
 
     return redirect(url_for("game_page", game_id=game_id))
@@ -1479,19 +1847,24 @@ def start_lobby_game_from_lobby(lobby_id):
 
 @app.route("/lobby/start", methods=["POST"])
 def start_lobby_game():
-    global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, game_id
-    global current_game_players, restart_votes
+    global game_state, game_log, game_chat_messages, last_roll, can_buy, game_over, waiting_for_ai, game_id
+    global current_game_players, property_houses, property_landing_counts, restart_votes, active_context_game_id
 
     game_id = "local_demo_game"
+    active_context_game_id = game_id
+    session["active_game_id"] = game_id
     current_game_players = list(players)
     game_state = engine.initialize_game(current_game_players)
-    game_log = ["Game started! Player 1 is on GO."]
+    game_log = [{"type": "system", "message": "Game started! Player 1 is on GO."}]
+    game_chat_messages = []
     last_roll = None
     clear_pending_buy()
     pending_jail_actions.clear()
     pending_jail_purchases.clear()
     game_over = False
     waiting_for_ai = False
+    property_houses = {}
+    property_landing_counts = {}
     restart_votes = set()
     lobby_demo_state = {
     "player2_ready": False,
@@ -1543,6 +1916,7 @@ def game_state_status(game_id):
         "waiting_for_ai": waiting_for_ai,
         "game_over": game_over,
         "game_log_count": len(game_log),
+        "game_chat_count": len(game_chat_messages),
         "property_houses": property_houses,
         "property_owners": {idx: state.owner_id for idx, state in game_state.properties.items()},
         "property_state_houses": {idx: state.houses for idx, state in game_state.properties.items()},
@@ -1571,6 +1945,7 @@ def game_state_status(game_id):
         "winner": format_player_name(game_state.winner_id) if game_state.winner_id else None,
         "game_log": game_log,
         "game_log_count": len(game_log),
+        "game_chat_count": len(game_chat_messages),
         "restart_votes_count": len(restart_votes),
         "restart_required_count": get_restart_required_count(),
         "restart_has_voted": current_user_player_id in restart_votes,
@@ -1578,6 +1953,28 @@ def game_state_status(game_id):
         "state_signature": state_signature,
         "html": render_game_html(),
     })
+
+@app.route("/game-chat", methods=["POST"])
+def game_chat():
+    message_text = request.form.get("message", "").strip()
+
+    if message_text:
+        sender_name = format_player_name(get_current_user_player_id())
+
+        game_chat_messages.append({
+            "sender": sender_name,
+            "text": message_text[:300]
+        })
+
+        # Keep the game page light by retaining only the latest messages.
+        if len(game_chat_messages) > 50:
+            del game_chat_messages[:-50]
+
+    if is_ajax_request():
+        return render_game_page()
+
+    return redirect(url_for("game_page", game_id=game_id))
+
 
 @app.route("/game/<game_id>/leave", methods=["POST"])
 def leave_game_room(game_id):
@@ -1668,7 +2065,7 @@ def buy_property():
     if property_state.owner_id is None and player.cash >= tile.buy_price:
         player.cash -= tile.buy_price
         property_state.owner_id = pending_buy_player_id
-        game_log.append(f"{format_player_name(pending_buy_player_id)} bought {tile.name} for ${tile.buy_price}.")
+        append_game_log("property_bought", f"{format_player_name(pending_buy_player_id)} bought {tile.name} for ${tile.buy_price}.")
         record_event(
             "property_bought",
             amount=tile.buy_price,
@@ -1678,13 +2075,12 @@ def buy_property():
             }
         )
     else:
-        game_log.append(f"{format_player_name(pending_buy_player_id)} cannot buy {tile.name}.")
+        append_game_log("action_blocked", f"{format_player_name(pending_buy_player_id)} cannot buy {tile.name}.")
 
     clear_pending_buy()
 
     if is_singleplayer_mode() and get_active_player_id() != "player1":
         waiting_for_ai = True
-        play_ai_turns_until_player()
     else:
         waiting_for_ai = False
 
@@ -1707,12 +2103,11 @@ def skip_buy():
 
     if can_buy and pending_buy_player_id == get_current_user_player_id():
         tile = config.tiles[pending_buy_tile_index]
-        game_log.append(f"{format_player_name(pending_buy_player_id)} chose not to buy {tile.name}.")
+        append_game_log("property_skipped", f"{format_player_name(pending_buy_player_id)} chose not to buy {tile.name}.")
         clear_pending_buy()
 
     if is_singleplayer_mode() and get_active_player_id() != "player1":
         waiting_for_ai = True
-        play_ai_turns_until_player()
     else:
         waiting_for_ai = False
 
@@ -1753,10 +2148,16 @@ def ai_turn():
         new_position = game_state.players[acting_player_id].pos
         last_roll = (new_position - old_position) % len(config.tiles)
 
+        landed_tile = config.tiles[new_position]
+        if landed_tile.tile_type == "property":
+            record_property_landing(acting_player_id, landed_tile.index)
+
+        perform_ai_property_management(acting_player_id)
+
         text = format_event(ai_event)
 
         if text and "landed on GO" not in text:
-            game_log.append(text)
+            append_game_log(ai_event.get("type", "ai_turn"), text)
 
         check_game_over()
 
@@ -1851,26 +2252,27 @@ def build_house():
 
     property_state = game_state.properties.get(tile_index)
     if property_state is None:
-        game_log.append("No valid property was selected for building.")
+        append_game_log("action_blocked", "No valid property was selected for building.")
     elif property_state.owner_id != current_user_player_id:
-        game_log.append(f"{format_player_name(current_user_player_id)} cannot build on a property they do not own.")
+        append_game_log("action_blocked", f"{format_player_name(current_user_player_id)} cannot build on a property they do not own.")
     elif can_buy:
-        game_log.append("Please choose Buy or Skip before managing houses.")
+        append_game_log("action_blocked", "Please choose Buy or Skip before managing houses.")
     elif waiting_for_ai or game_over:
-        game_log.append("House management is not available right now.")
+        append_game_log("action_blocked", "House management is not available right now.")
     else:
         tile = config.tiles[tile_index]
         current_houses = property_state.houses or property_houses.get(tile_index, 0)
 
         if current_houses >= MAX_HOUSES_PER_PROPERTY:
-            game_log.append(f"{tile.name} already has the maximum number of houses.")
+            append_game_log("action_blocked", f"{tile.name} already has the maximum number of houses.")
         elif player.cash < HOUSE_COST:
-            game_log.append(f"{format_player_name(current_user_player_id)} needs ${HOUSE_COST} to build a house on {tile.name}.")
+            append_game_log("action_blocked", f"{format_player_name(current_user_player_id)} needs ${HOUSE_COST} to build a house on {tile.name}.")
         else:
             player.cash -= HOUSE_COST
             property_state.houses = current_houses + 1
             property_houses[tile_index] = property_state.houses
-            game_log.append(
+            append_game_log(
+                "house_built",
                 f"{format_player_name(current_user_player_id)} built a house on {tile.name}. "
                 f"Houses: {property_state.houses}/{MAX_HOUSES_PER_PROPERTY}."
             )
@@ -1909,17 +2311,19 @@ def sell_house():
 
     property_state = game_state.properties.get(tile_index)
     if property_state is None:
-        game_log.append("No valid property was selected for selling a house.")
+        append_game_log("action_blocked", "No valid property was selected for selling a house.")
     elif property_state.owner_id != current_user_player_id:
-        game_log.append(f"{format_player_name(current_user_player_id)} cannot sell a house on a property they do not own.")
+        append_game_log("action_blocked", f"{format_player_name(current_user_player_id)} cannot sell a house on a property they do not own.")
     elif can_buy:
-        game_log.append("Please choose Buy or Skip before managing houses.")
+        append_game_log("action_blocked", "Please choose Buy or Skip before managing houses.")
     elif waiting_for_ai or game_over:
-        game_log.append("House management is not available right now.")
+        append_game_log("action_blocked", "House management is not available right now.")
+    elif not player_needs_cash(current_user_player_id):
+        append_game_log("action_blocked", "You can only sell houses when you need cash.")
     else:
         current_houses = property_state.houses or property_houses.get(tile_index, 0)
         if current_houses <= 0:
-            game_log.append("No house was available to sell.")
+            append_game_log("action_blocked", "No house was available to sell.")
         else:
             tile = config.tiles[tile_index]
             property_state.houses = current_houses - 1
@@ -1929,7 +2333,7 @@ def sell_house():
                 property_houses.pop(tile_index, None)
 
             player.cash += HOUSE_SELL_VALUE
-            game_log.append(f"{format_player_name(current_user_player_id)} sold one house on {tile.name} for ${HOUSE_SELL_VALUE}.")
+            append_game_log("house_sold", f"{format_player_name(current_user_player_id)} sold one house on {tile.name} for ${HOUSE_SELL_VALUE}.")
             record_event(
                 "house_sold",
                 amount=HOUSE_SELL_VALUE,
@@ -1965,13 +2369,15 @@ def sell_property():
 
     property_state = game_state.properties.get(tile_index)
     if property_state is None:
-        game_log.append("No valid property was selected for selling.")
+        append_game_log("action_blocked", "No valid property was selected for selling.")
     elif property_state.owner_id != current_user_player_id:
-        game_log.append(f"{format_player_name(current_user_player_id)} cannot sell a property they do not own.")
+        append_game_log("action_blocked", f"{format_player_name(current_user_player_id)} cannot sell a property they do not own.")
     elif can_buy:
-        game_log.append("Please choose Buy or Skip before selling property.")
+        append_game_log("action_blocked", "Please choose Buy or Skip before selling property.")
     elif waiting_for_ai or game_over:
-        game_log.append("Property selling is not available right now.")
+        append_game_log("action_blocked", "Property selling is not available right now.")
+    elif not player_needs_cash(current_user_player_id):
+        append_game_log("action_blocked", "You can only sell properties when you need cash.")
     else:
         tile = config.tiles[tile_index]
         house_count = property_state.houses or property_houses.get(tile_index, 0)
@@ -1984,7 +2390,8 @@ def sell_property():
         property_state.mortgaged = False
         property_houses.pop(tile_index, None)
 
-        game_log.append(
+        append_game_log(
+            "property_sold",
             f"{format_player_name(current_user_player_id)} sold {tile.name} for ${sell_value}."
         )
         record_event(
@@ -2006,7 +2413,7 @@ def sell_property():
 
 @app.route("/reset", methods=["POST"])
 def reset_game():
-    global game_state, game_log, last_roll, can_buy, game_over, waiting_for_ai, property_houses
+    global game_state, game_log, game_chat_messages, last_roll, can_buy, game_over, waiting_for_ai, property_houses, property_landing_counts
     global current_game_players, restart_votes
 
     current_user_player_id = get_current_user_player_id()
@@ -2023,7 +2430,8 @@ def reset_game():
         required_votes = set(game_state.turn_order)
 
         if not required_votes.issubset(restart_votes):
-            game_log.append(
+            append_game_log(
+                "restart_requested",
                 f"{format_player_name(current_user_player_id)} requested a restart "
                 f"({len(restart_votes)}/{len(required_votes)} approvals)."
             )
@@ -2031,11 +2439,12 @@ def reset_game():
                 return render_game_page()
             return redirect(url_for("game_page", game_id=game_id))
 
-        game_log.append("All players agreed to restart the game.")
+        append_game_log("restart_agreed", "All players agreed to restart the game.")
         restart_votes = set()
 
     game_state = engine.initialize_game(current_game_players)
-    game_log = [f"Game reset! {current_game_players[0]['name']} is on GO."]
+    game_log = [make_game_log_entry("system", f"Game reset! {current_game_players[0]['name']} is on GO.")]
+    game_chat_messages = []
     last_roll = None
     clear_pending_buy()
     pending_jail_actions.clear()
@@ -2043,6 +2452,7 @@ def reset_game():
     game_over = False
     waiting_for_ai = False
     property_houses = {}
+    property_landing_counts = {}
 
     if is_ajax_request():
         return render_game_page()
