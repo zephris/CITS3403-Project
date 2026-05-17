@@ -35,7 +35,7 @@
 </style>
 
 </head>
-<body data-waiting-for-ai="{{ 'true' if waiting_for_ai and not game_over else 'false' }}" data-game-mode="{{ game_mode }}" data-current-user-turn="{{ 'true' if is_current_user_turn else 'false' }}">
+<body data-waiting-for-ai="{{ 'true' if waiting_for_ai and not game_over else 'false' }}" data-game-mode="{{ game_mode }}" data-current-user-turn="{{ 'true' if is_current_user_turn else 'false' }}" data-lobby-id="{{ lobby_id or '' }}">
 
 <nav class="navbar navbar-dark bg-dark mb-4">
     <div class="container-fluid">
@@ -763,10 +763,13 @@
 </div>
 <script id="property-house-data" type="application/json">{{ property_houses_json|safe }}</script>
 <script id="token-data" type="application/json">{{ tokens_by_tile_json|safe }}</script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
     window.GAME_WAITING_FOR_AI = document.body.dataset.waitingForAi === "true";
     window.GAME_MODE = document.body.dataset.gameMode || "singleplayer";
     window.GAME_CURRENT_USER_TURN = document.body.dataset.currentUserTurn === "true";
+    window.GAME_LOBBY_ID = document.body.dataset.lobbyId || "";
+    window.GAME_WEBSOCKET_ACTIVE = false;
     window.GAME_STATE_URL = "{{ url_for('game_state_status', game_id=game_id) }}";
 </script>
 <script>
@@ -894,10 +897,13 @@
             newDocument.body && newDocument.body.dataset.gameMode || "singleplayer";
         window.GAME_CURRENT_USER_TURN =
             newDocument.body && newDocument.body.dataset.currentUserTurn === "true";
+        window.GAME_LOBBY_ID =
+            newDocument.body && newDocument.body.dataset.lobbyId || window.GAME_LOBBY_ID || "";
 
         setupRollForm();
         setupActionForms();
         maybeRunAiTurn();
+        setupLobbySocket();
         setupLanPolling();
     }
 
@@ -1033,6 +1039,7 @@
     let lanPollingTimer = null;
     let lastStateSignature = "";
     let isUpdatingFromPoll = false;
+    let lobbySocket = null;
 
     function buildFallbackSignature(data) {
         return JSON.stringify({
@@ -1099,6 +1106,10 @@
             lanPollingTimer = null;
         }
 
+        if (window.GAME_WEBSOCKET_ACTIVE) {
+            return;
+        }
+
         if (window.GAME_MODE !== "multiplayer") {
             return;
         }
@@ -1110,11 +1121,45 @@
         }
     }
 
+    function setupLobbySocket() {
+        if (!window.GAME_LOBBY_ID || typeof io === "undefined") {
+            return;
+        }
+
+        if (lobbySocket) {
+            return;
+        }
+
+        lobbySocket = io();
+
+        lobbySocket.on("connect", function () {
+            window.GAME_WEBSOCKET_ACTIVE = true;
+            lobbySocket.emit("join_lobby", { lobby_id: window.GAME_LOBBY_ID });
+            setupLanPolling();
+        });
+
+        lobbySocket.on("disconnect", function () {
+            window.GAME_WEBSOCKET_ACTIVE = false;
+            setupLanPolling();
+        });
+
+        lobbySocket.on("game_state", function (payload) {
+            if (payload && payload.html) {
+                updatePageFromHtml(payload.html);
+            }
+        });
+
+        lobbySocket.on("game_state_updated", function () {
+            refreshGameState();
+        });
+    }
+
     renderHouseMarkers();
     renderTokens();
     setupRollForm();
     setupActionForms();
     maybeRunAiTurn();
+    setupLobbySocket();
     setupLanPolling();
 })();
 </script>

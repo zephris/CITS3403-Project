@@ -1,4 +1,5 @@
 from flask import Flask, render_template, redirect, url_for, request, session, jsonify
+from flask_socketio import SocketIO, join_room, emit
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Lobby, LobbyPlayer, LobbyMessage
 from template.backend.app.game_logic.engine import load_game_config, GameEngine
@@ -12,6 +13,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 config = load_game_config("template/backend/app/game_logic/data/monopoly_standard.json")
 engine = GameEngine(config)
@@ -134,6 +136,39 @@ def format_player_name(player_id):
 
 def is_singleplayer_mode():
     return not str(game_id).startswith("lobby_")
+
+
+def get_lobby_id_from_game_id(target_game_id=None):
+    target = target_game_id or game_id
+    if not target:
+        return None
+
+    target = str(target)
+    if not target.startswith("lobby_"):
+        return None
+
+    parts = target.split("_")
+    if len(parts) < 2:
+        return None
+
+    try:
+        return int(parts[1])
+    except (TypeError, ValueError):
+        return None
+
+
+def broadcast_game_state():
+    lobby_id = get_lobby_id_from_game_id()
+    if lobby_id is None:
+        return
+
+    socketio.emit(
+        "game_state_updated",
+        {
+            "game_id": game_id,
+        },
+        to=f"lobby_{lobby_id}",
+    )
 
 
 def get_current_user_player_id():
@@ -542,6 +577,7 @@ def build_game_template_context(dice_result=None):
         (entry["icon"] for entry in players if entry["player_id"] == active_player_id),
         "🧍"
     )
+    lobby_id = get_lobby_id_from_game_id()
 
     tokens_by_tile = {}
     for slot_index, player_entry in enumerate(players, start=1):
@@ -581,6 +617,7 @@ def build_game_template_context(dice_result=None):
         "players": players,
         "active_player_name": active_player.name if active_player else "Player",
         "active_player_icon": active_player_icon,
+        "lobby_id": lobby_id,
         "house_count": active_info["house_count"],
         "max_houses": MAX_HOUSES_PER_PROPERTY,
         "house_cost": HOUSE_COST,
@@ -640,6 +677,27 @@ def render_game_page(dice_result=None):
     return render_game_html(dice_result)
 
 
+@socketio.on("join_lobby")
+def join_lobby_room(data):
+    lobby_id = None
+    if isinstance(data, dict):
+        lobby_id = data.get("lobby_id")
+
+    if not lobby_id:
+        return
+
+    room = f"lobby_{lobby_id}"
+    join_room(room)
+    emit(
+        "game_state",
+        {
+            "game_id": game_id,
+            "html": render_game_html(),
+        },
+        to=request.sid,
+    )
+
+
 @app.route("/")
 def home():
     return render_template(
@@ -664,6 +722,8 @@ def singleplayer():
     game_over = False
     waiting_for_ai = False
     property_houses = {}
+
+    broadcast_game_state()
 
     return redirect(url_for("game_page", game_id=game_id))
 
@@ -1283,6 +1343,8 @@ def roll_dice():
     else:
         waiting_for_ai = False
 
+    broadcast_game_state()
+
     if is_ajax_request():
         return ajax_dice_response(last_roll)
 
@@ -1332,6 +1394,8 @@ def buy_property():
 
     update_buy_status()
 
+    broadcast_game_state()
+
     if is_ajax_request():
         return render_game_page()
 
@@ -1359,6 +1423,8 @@ def skip_buy():
         waiting_for_ai = False
 
     update_buy_status()
+
+    broadcast_game_state()
 
     if is_ajax_request():
         return render_game_page()
@@ -1410,6 +1476,8 @@ def ai_turn():
 
     waiting_for_ai = False
     update_buy_status()
+
+    broadcast_game_state()
 
     if is_ajax_request():
         return ajax_dice_response(last_roll)
@@ -1469,6 +1537,8 @@ def build_house():
 
     update_buy_status()
 
+    broadcast_game_state()
+
     if is_ajax_request():
         return render_game_page()
 
@@ -1524,6 +1594,8 @@ def sell_house():
             )
 
     update_buy_status()
+
+    broadcast_game_state()
 
     if is_ajax_request():
         return render_game_page()
@@ -1582,6 +1654,8 @@ def sell_property():
 
     update_buy_status()
 
+    broadcast_game_state()
+
     if is_ajax_request():
         return render_game_page()
 
@@ -1606,6 +1680,8 @@ def reset_game():
     waiting_for_ai = False
     property_houses = {}
 
+    broadcast_game_state()
+
     if is_ajax_request():
         return render_game_page()
 
@@ -1616,4 +1692,4 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
 
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
