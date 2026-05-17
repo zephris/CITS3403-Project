@@ -768,3 +768,827 @@ html { scroll-behavior: smooth; }
         padding: 7px 12px !important;
     }
 }
+
+/* Center board event cards */
+.event-card-area {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    align-items: center;
+    margin: 12px 0 8px;
+    flex-wrap: wrap;
+}
+
+.event-card {
+    position: relative;
+    width: 170px;
+    min-height: 115px;
+    padding: 14px 12px;
+    border-radius: 18px;
+    text-align: center;
+    overflow: hidden;
+    box-shadow:
+        0 14px 28px rgba(15, 23, 42, 0.18),
+        inset 0 0 0 2px rgba(255, 255, 255, 0.65);
+    transform: rotate(-3deg);
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        filter 0.18s ease;
+}
+
+.event-card:nth-child(2) {
+    transform: rotate(3deg);
+}
+
+.event-card:hover {
+    transform: translateY(-4px) rotate(0deg) scale(1.04);
+    box-shadow:
+        0 20px 36px rgba(15, 23, 42, 0.25),
+        inset 0 0 0 2px rgba(255, 255, 255, 0.75);
+    filter: brightness(1.04);
+}
+
+.chance-card {
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 35%),
+        linear-gradient(145deg, #fff3b0, #f6c343 50%, #f59e0b);
+    border: 3px solid rgba(146, 64, 14, 0.45);
+}
+
+.chest-card {
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.92), transparent 35%),
+        linear-gradient(145deg, #dff7ff, #7dd3fc 45%, #0284c7);
+    border: 3px solid rgba(12, 74, 110, 0.45);
+}
+
+.event-card-icon {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 7px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.82);
+    color: #111827;
+    font-size: 1.35rem;
+    font-weight: 1000;
+    box-shadow: 0 6px 12px rgba(15, 23, 42, 0.18);
+}
+
+.event-card-title {
+    font-size: 0.9rem;
+    font-weight: 1000;
+    letter-spacing: 1px;
+    color: #111827;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.event-card-subtitle {
+    margin-top: 5px;
+    font-size: 0.62rem;
+    line-height: 1.2;
+    font-weight: 700;
+    color: rgba(17, 24, 39, 0.78);
+}
+
+.event-card-corner {
+    position: absolute;
+    right: 8px;
+    bottom: 6px;
+    font-size: 1.05rem;
+    opacity: 0.55;
+}
+
+/* ===== Right-side Panel Shared Style ===== */
+.side-panel {
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow:
+        0 12px 30px rgba(15, 23, 42, 0.12),
+        inset 0 1px 0 rgba(255,255,255,0.55);
+    backdrop-filter: blur(6px);
+    margin-bottom: 24px;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 22px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.3px;
+}
+
+.panel-icon {
+    font-size: 1.15rem;
+}
+
+.leaderboard-header {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.gamelog-header {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+/* ===== Leaderboard ===== */
+.leaderboard-list {
+    padding: 10px 0;
+    background: rgba(248, 250, 252, 0.65);
+}
+
+.leaderboard-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.leaderboard-row:last-child {
+    border-bottom: none;
+}
+
+.leaderboard-row:hover {
+    background: rgba(255,255,255,0.65);
+}
+
+.current-player {
+    background: rgba(255,255,255,0.45);
+}
+
+.player-meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.player-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #eef2ff, #dbeafe);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.12);
+}
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.player-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #1f2937;
+}
+
+.you-tag {
+    color: #6b7280;
+    font-weight: 700;
+}
+
+.player-role {
+    font-size: 0.82rem;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.money-pill {
+    min-width: 102px;
+    text-align: center;
+    padding: 10px 16px;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 900;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+}
+
+.money-pill-red {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.money-pill-blue {
+    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+}
+
+/* ===== Game Log ===== */
+.gamelog-body {
+    padding: 16px 16px 10px;
+    min-height: 430px;
+    max-height: 510px;
+    overflow-y: auto;
+    background: rgba(248, 250, 252, 0.72);
+}
+
+.log-item {
+    background: rgba(255,255,255,0.82);
+    border-left: 5px solid #cbd5e1;
+    border-radius: 18px;
+    padding: 15px 18px;
+    margin-bottom: 12px;
+    color: #374151;
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.45;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+}
+
+.latest-log {
+    border-left-color: #fbbf24;
+    background: #fffdf5;
+}
+
+/* ===== Chat Bar ===== */
+.chat-input-bar {
+    display: flex;
+    gap: 10px;
+    padding: 14px 16px;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(255,255,255,0.75);
+}
+
+.chat-input-bar input {
+    flex: 1;
+    border: 1px solid #d1d5db;
+    border-radius: 999px;
+    padding: 12px 16px;
+    font-size: 0.98rem;
+    background: rgba(255,255,255,0.92);
+    outline: none;
+}
+
+.chat-input-bar input:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 4px rgba(96,165,250,0.15);
+}
+
+.chat-input-bar button {
+    border: none;
+    border-radius: 14px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    color: #4b5563;
+    font-weight: 800;
+    transition: all 0.18s ease;
+}
+
+.chat-input-bar button:hover {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #fff;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 768px) {
+    .leaderboard-row {
+        padding: 16px;
+    }
+
+    .money-pill {
+        min-width: 90px;
+        font-size: 0.95rem;
+        padding: 9px 12px;
+    }
+
+    .gamelog-body {
+        min-height: 320px;
+        max-height: 380px;
+    }
+}
+
+
+/* =========================
+   Property Management in right sidebar
+   ========================= */
+.compact-leaderboard-card .list-group-item {
+    padding: 11px 14px !important;
+}
+
+.compact-log-card .compact-game-log-body {
+    height: 220px !important;
+    max-height: 220px;
+}
+
+.property-sidebar-panel {
+    margin-bottom: 24px;
+}
+
+.property-sidebar-body {
+    background: linear-gradient(180deg, #f8fafc, #eef4f8);
+    padding: 14px !important;
+}
+
+.property-sidebar-section {
+    background: rgba(255, 255, 255, 0.88);
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+    border-left: 4px solid #22c55e;
+}
+
+.property-sidebar-section:last-child {
+    margin-bottom: 0;
+}
+
+.property-sidebar-title {
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: #14532d;
+    margin-bottom: 4px;
+}
+
+.property-sidebar-text {
+    font-size: 0.84rem;
+    color: #4b5563;
+    line-height: 1.35;
+    margin-bottom: 6px;
+}
+
+.property-sidebar-empty {
+    background: rgba(255, 255, 255, 0.82);
+    border-radius: 16px;
+    padding: 14px;
+    color: #6b7280;
+    font-weight: 700;
+    text-align: center;
+}
+
+.property-sidebar-panel select {
+    border-radius: 12px !important;
+    font-weight: 700;
+}
+
+.property-sidebar-panel .btn {
+    border-radius: 999px !important;
+}
+
+@media (max-width: 992px) {
+    .compact-log-card .compact-game-log-body {
+        height: 260px !important;
+        max-height: 260px;
+    }
+}
+
+/* Multi-player support: dynamic tokens for 2/3/4-player games */
+.multi-player-token {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    font-size: 1rem;
+    z-index: 60;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.34), inset 0 0 0 2px rgba(255,255,255,0.9);
+    border: 3px solid #64748b;
+}
+
+.multi-player-token.token-you {
+    border-color: #e53935;
+}
+
+.multi-player-token.token-current-turn {
+    outline: 3px solid #f6c343;
+}
+
+.token-slot-1 { right: 4px; bottom: 4px; }
+.token-slot-2 { left: 4px; top: 4px; }
+.token-slot-3 { right: 4px; top: 4px; }
+.token-slot-4 { left: 4px; bottom: 4px; }
+
+.jail-action-panel {
+    width: min(520px, 96%);
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.jail-action-title {
+    font-weight: 950;
+    color: #991b1b;
+}
+
+.jail-action-text {
+    font-size: 0.86rem;
+    color: #475569;
+}
+
+.jail-buy-form {
+    display: grid;
+    grid-template-columns: minmax(140px, 1fr) 80px auto;
+    gap: 6px;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .multi-player-token {
+        width: 22px;
+        height: 22px;
+        font-size: 0.8rem;
+    }
+
+    .jail-buy-form {
+        grid-template-columns: 1fr;
+        width: 100%;
+    }
+}
+
+
+/* =========================
+   Structured Game Log
+   Uses structured entries: {"type": "...", "message": "..."}
+   ========================= */
+
+.game-log-card {
+    border: 0 !important;
+    border-radius: 22px !important;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.94) !important;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.16) !important;
+}
+
+.game-log-header {
+    background: linear-gradient(135deg, #334155, #0f172a) !important;
+    color: #ffffff !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    font-weight: 950 !important;
+}
+
+.game-log-header small {
+    color: rgba(255, 255, 255, 0.78);
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.game-log-body {
+    height: 220px;
+    overflow-y: auto;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 35%),
+        linear-gradient(180deg, #f8fafc, #eef4f8);
+    padding: 12px;
+}
+
+.game-log-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 10px;
+    margin-bottom: 9px;
+    border-radius: 15px;
+    background: #ffffff;
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    border-left: 5px solid #94a3b8;
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.07);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.game-log-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
+}
+
+.game-log-item:first-child {
+    background: linear-gradient(135deg, #f0fdf4, #ffffff);
+    box-shadow:
+        0 0 0 3px rgba(34, 197, 94, 0.1),
+        0 10px 22px rgba(15, 23, 42, 0.1);
+}
+
+.game-log-icon {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.25);
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.game-log-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.game-log-message {
+    color: #1f2937;
+    font-size: 0.86rem;
+    font-weight: 750;
+    line-height: 1.28;
+    overflow-wrap: anywhere;
+}
+
+.game-log-type {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+}
+
+.game-log-empty {
+    color: #64748b;
+    text-align: center;
+    padding: 20px 8px;
+    font-size: 0.86rem;
+    font-weight: 750;
+}
+
+.game-log-property-bought { border-left-color: #22c55e; }
+.game-log-property-sold,
+.game-log-house-sold,
+.game-log-property-skipped { border-left-color: #f97316; }
+.game-log-rent-paid,
+.game-log-tax-paid,
+.game-log-jail-paid-fine,
+.game-log-jail-forced-release { border-left-color: #ef4444; }
+.game-log-go-to-jail,
+.game-log-go-to-jail-double,
+.game-log-jail-roll-failed,
+.game-log-jail-roll-doubles,
+.game-log-jail-used-card,
+.game-log-jail-bought-card,
+.game-log-jail-buy-failed,
+.game-log-jail-release { border-left-color: #111827; }
+.game-log-card-drawn,
+.game-log-card-none { border-left-color: #a855f7; }
+.game-log-house-built { border-left-color: #16a34a; }
+.game-log-game-over { border-left-color: #eab308; }
+.game-log-restart-requested,
+.game-log-restart-agreed { border-left-color: #0ea5e9; }
+.game-log-action-blocked { border-left-color: #dc2626; }
+.game-log-system,
+.game-log-no-action,
+.game-log-landed-own-property { border-left-color: #64748b; }
+
+@media (max-width: 992px) {
+    .game-log-body {
+        height: 190px;
+        padding: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .game-log-header {
+        font-size: 0.9rem;
+    }
+
+    .game-log-header small {
+        font-size: 0.7rem;
+    }
+
+    .game-log-body {
+        height: 165px;
+        padding: 8px;
+    }
+
+    .game-log-item {
+        padding: 8px;
+        gap: 8px;
+        margin-bottom: 7px;
+        border-radius: 13px;
+    }
+
+    .game-log-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 0.82rem;
+    }
+
+    .game-log-message {
+        font-size: 0.78rem;
+    }
+
+    .game-log-type {
+        font-size: 0.62rem;
+    }
+}
+
+/* =========================
+   Final background and board colour polish
+   Softer Perth sunset + ocean theme
+   ========================= */
+:root {
+    --page-sky: #d8ecff;
+    --page-mint: #dff5df;
+    --page-sand: #fff3cf;
+    --board-dark: #17324d;
+    --board-rim: #0f2538;
+    --board-inner: #dff4e7;
+    --tile-light: #fffaf0;
+    --tile-green: #dcefd4;
+    --panel: rgba(255, 255, 255, 0.90);
+    --shadow: 0 18px 48px rgba(15, 35, 56, 0.20);
+    --text-dark: #193047;
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    color: var(--text-dark) !important;
+    background:
+        radial-gradient(circle at 8% 8%, rgba(255, 255, 255, 0.98) 0, rgba(255, 255, 255, 0.72) 18%, transparent 38%),
+        radial-gradient(circle at 88% 12%, rgba(255, 215, 120, 0.42) 0, rgba(255, 215, 120, 0.18) 24%, transparent 45%),
+        radial-gradient(circle at 72% 88%, rgba(103, 197, 255, 0.32) 0, rgba(103, 197, 255, 0.12) 25%, transparent 48%),
+        linear-gradient(135deg, #d8ecff 0%, #e5f7df 42%, #fff1cb 100%) !important;
+}
+
+body::before {
+    background-image:
+        linear-gradient(rgba(23, 50, 77, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 50, 77, 0.045) 1px, transparent 1px),
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.38), transparent 26%) !important;
+    background-size: 42px 42px, 42px 42px, 360px 360px !important;
+}
+
+.navbar {
+    background: linear-gradient(90deg, #10253d, #173f5f, #10253d) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 10px 30px rgba(15, 35, 56, 0.28) !important;
+}
+
+#game-board-panel .card,
+#game-sidebar .card,
+.card {
+    background: rgba(255, 255, 255, 0.88) !important;
+    border: 1px solid rgba(255, 255, 255, 0.70) !important;
+    box-shadow:
+        0 20px 48px rgba(15, 35, 56, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.68) !important;
+}
+
+#game-board-panel .card-body {
+    background:
+        linear-gradient(135deg, rgba(255, 250, 239, 0.82), rgba(226, 245, 235, 0.82)) !important;
+}
+
+.monopoly-board {
+    border-color: var(--board-rim) !important;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.20), transparent 38%),
+        linear-gradient(135deg, #244969, #17324d 48%, #0f2538) !important;
+    box-shadow:
+        inset 0 0 0 4px rgba(255, 255, 255, 0.14),
+        inset 0 0 36px rgba(255, 255, 255, 0.10),
+        0 24px 58px rgba(15, 35, 56, 0.36) !important;
+}
+
+.tile {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 250, 234, 0.92) 45%, rgba(222, 240, 213, 0.92)) !important;
+    border-color: rgba(15, 37, 56, 0.34) !important;
+    color: #17324d !important;
+}
+
+.tile:hover {
+    filter: saturate(1.05) brightness(1.04) !important;
+    box-shadow: 0 10px 22px rgba(15, 35, 56, 0.22) !important;
+}
+
+.tile.corner {
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.96), transparent 55%),
+        linear-gradient(145deg, #fff4c9, #e3f3d2 58%, #cae9e0) !important;
+    color: #17324d !important;
+}
+
+.tile[style*="background-color: #eaf1e8"] {
+    background:
+        linear-gradient(145deg, #eef9ff, #eaf7de) !important;
+}
+
+.price {
+    background: rgba(255, 255, 255, 0.72) !important;
+    color: #12263a !important;
+}
+
+.title,
+.non-prop-title {
+    color: #17324d !important;
+}
+
+.center-space {
+    background:
+        radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.96), transparent 30%),
+        radial-gradient(circle at 82% 82%, rgba(255, 218, 120, 0.25), transparent 32%),
+        linear-gradient(145deg, rgba(255, 250, 238, 0.96), rgba(220, 244, 232, 0.95) 48%, rgba(218, 238, 255, 0.92)) !important;
+    border-color: rgba(23, 50, 77, 0.22) !important;
+    box-shadow:
+        inset 0 0 48px rgba(23, 50, 77, 0.08),
+        0 10px 26px rgba(15, 35, 56, 0.10) !important;
+}
+
+.center-space::before {
+    color: rgba(23, 50, 77, 0.055) !important;
+}
+
+.center-space h2 {
+    color: #c2410c !important;
+    text-shadow: 0 4px 0 rgba(255, 255, 255, 0.72), 0 8px 18px rgba(194, 65, 12, 0.10) !important;
+}
+
+.center-space h4 {
+    color: #3b607a !important;
+}
+
+.center-space p,
+.turn-status,
+.dice-message,
+.dice-result,
+.house-panel,
+.jail-action-panel {
+    background: rgba(255, 255, 255, 0.76) !important;
+    color: #17324d !important;
+    border: 1px solid rgba(255, 255, 255, 0.66) !important;
+}
+
+.active-tile {
+    outline-color: #ffcf5a !important;
+    box-shadow:
+        0 0 0 4px rgba(255, 207, 90, 0.30),
+        0 0 24px rgba(255, 207, 90, 0.90),
+        inset 0 0 0 2px rgba(255, 255, 255, 0.84) !important;
+}
+
+.owned-player {
+    border-color: #e54848 !important;
+    box-shadow:
+        inset 0 0 0 2px rgba(229, 72, 72, 0.14),
+        0 0 10px rgba(229, 72, 72, 0.28) !important;
+}
+
+.owned-ai {
+    border-color: #2563eb !important;
+    box-shadow:
+        inset 0 0 0 2px rgba(37, 99, 235, 0.14),
+        0 0 10px rgba(37, 99, 235, 0.28) !important;
+}
+
+.game-log-card,
+.game-chat-card,
+.property-sidebar-panel,
+.compact-leaderboard-card {
+    background: rgba(255, 255, 255, 0.90) !important;
+}
+
+.game-log-body,
+.game-chat-body,
+.compact-game-log-body,
+.property-sidebar-body {
+    background:
+        linear-gradient(180deg, rgba(248, 252, 255, 0.94), rgba(239, 248, 238, 0.94)) !important;
+}
+
+.panel-header,
+.game-log-header,
+.card-header.bg-primary,
+.card-header.bg-secondary,
+.card-header.bg-success,
+.card-header.bg-dark {
+    background: linear-gradient(135deg, #17324d, #245b7a) !important;
+    color: #ffffff !important;
+}
+
+.event-card.chance-card,
+.chance-card {
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.96), transparent 35%),
+        linear-gradient(145deg, #fff5bd, #ffd166 52%, #f59e0b) !important;
+}
+
+.event-card.chest-card,
+.chest-card {
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.96), transparent 35%),
+        linear-gradient(145deg, #e0f7ff, #8bd3ff 46%, #0ea5e9) !important;
+}
