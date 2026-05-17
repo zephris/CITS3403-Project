@@ -4,15 +4,45 @@ from models import db, User, Lobby, LobbyPlayer, LobbyMessage
 from template.backend.app.game_logic.engine import load_game_config, GameEngine
 import random
 import json
+import os
+import secrets
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "dev-secret-key"
+app.secret_key = os.getenv("SECRET_KEY", "fallback-dev-secret-key")
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///app.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
+def generate_csrf_token():
+    token = session.get("csrf_token")
 
+    if not token:
+        token = secrets.token_hex(32)
+        session["csrf_token"] = token
+
+    return token
+
+
+app.jinja_env.globals["csrf_token"] = generate_csrf_token
+
+
+@app.before_request
+def csrf_protect():
+    if request.method != "POST":
+        return
+
+    form_token = request.form.get("csrf_token")
+    header_token = request.headers.get("X-CSRFToken")
+    session_token = session.get("csrf_token")
+
+    submitted_token = form_token or header_token
+
+    if not submitted_token or not session_token or submitted_token != session_token:
+        return "Invalid CSRF token", 403
 config = load_game_config("template/backend/app/game_logic/data/monopoly_standard.json")
 engine = GameEngine(config)
 
@@ -1191,6 +1221,18 @@ def register():
             return render_template(
                 "register.html",
                 error="Username and password are required."
+            )
+
+        if not username.isalnum() or len(username) > 15:
+            return render_template(
+                "register.html",
+                error="Username must only contain letters and numbers, and must be 15 characters or fewer."
+            )
+
+        if not password.isdigit() or len(password) < 7 or len(password) > 10:
+             return render_template(
+                "register.html",
+                error="Password must only contain numbers, and must be between 7 and 10 digits."
             )
 
         existing_user = User.query.filter_by(username=username).first()
