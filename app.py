@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, session, jsonify
+from flask import Flask, render_template, redirect, url_for, request, session, jsonify, g
 from flask_socketio import SocketIO, join_room, emit  # type: ignore
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Lobby, LobbyPlayer, LobbyMessage
@@ -7,6 +7,7 @@ import random
 import json
 import os
 import secrets
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,6 +20,17 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
+logger = logging.getLogger(__name__)
+
+def safe_db_commit(description="database operation"):
+    """Safely commit database changes with error handling and rollback on failure."""
+    try:
+        db.session.commit()
+    except Exception as e:
+        logger.error(f"Database commit failed during {description}: {e}", exc_info=True)
+        db.session.rollback()
+        raise
+
 def generate_csrf_token():
     token = session.get("csrf_token")
 
@@ -106,7 +118,6 @@ LOW_CASH_SELL_THRESHOLD = HOUSE_COST
 # helper functions can still use the same variable names because each game route
 # activates the correct runtime before handling the request and saves it after.
 game_contexts = {}
-active_context_game_id = game_id
 
 GAME_RUNTIME_ENDPOINTS = {
     "singleplayer",
@@ -211,7 +222,7 @@ def make_game_context(game_id_value, game_players=None, start_message=None):
 
 def activate_game_context(game_id_value=None):
     """Load the selected game runtime into the variables used by existing code."""
-    global active_context_game_id, game_id, game_state, game_log, game_chat_messages
+    global game_id, game_state, game_log, game_chat_messages
     global last_roll, can_buy, game_over, waiting_for_ai, restart_votes
     global pending_buy_player_id, pending_buy_tile_index
     global pending_jail_actions, pending_jail_purchases
@@ -227,7 +238,7 @@ def activate_game_context(game_id_value=None):
         )
 
     context = game_contexts[game_id_value]
-    active_context_game_id = game_id_value
+    g.active_context_game_id = game_id_value  # Use Flask's g for thread-safe request context
     game_id = context["game_id"]
     game_state = context["game_state"]
     game_log = normalize_game_log(context["game_log"])
@@ -250,10 +261,11 @@ def activate_game_context(game_id_value=None):
 
 def save_active_game_context():
     """Persist the currently active globals back into the per-game dictionary."""
-    if not active_context_game_id:
+    active_game_id = getattr(g, 'active_context_game_id', None)
+    if not active_game_id:
         return
 
-    game_contexts[active_context_game_id] = {
+    game_contexts[active_game_id] = {
         "game_id": game_id,
         "game_state": game_state,
         "game_log": game_log,
@@ -482,18 +494,23 @@ def get_other_player_id():
 
 
 def get_visible_player():
+    if game_state is None or not game_state.players:
+        return None
     player_id = get_current_user_player_id()
     return game_state.players.get(player_id) or game_state.players[game_state.turn_order[0]]
 
 
 def get_visible_tile():
-    return config.tiles[get_visible_player().pos]
-
-
+    player = get_visible_player()
+    if player is None:
+        return None
+    return config.tiles[player.pos]
 
 
 def get_active_player():
-    return game_state.players[get_active_player_id()]
+    if game_state is None or not game_state.players:
+        return None
+    return game_state.players.get(get_active_player_id())
 
 
 def get_active_tile():
@@ -682,6 +699,10 @@ def update_buy_status():
     """
     global can_buy
 
+    if game_state is None:
+        can_buy = False
+        return
+
     if pending_buy_player_id is None or pending_buy_tile_index is None:
         can_buy = False
         return
@@ -706,6 +727,9 @@ def update_buy_status():
 
 def check_game_over():
     global game_over
+
+    if game_state is None:
+        return
 
     if game_state.winner_id and not game_over:
         game_over = True
@@ -1291,10 +1315,10 @@ def home():
 @app.route("/singleplayer")
 def singleplayer():
     global game_state, game_log, game_chat_messages, last_roll, can_buy, game_over, waiting_for_ai, game_id
-    global property_houses, property_landing_counts, current_game_players, restart_votes, active_context_game_id
+    global property_houses, property_landing_counts, current_game_players, restart_votes
 
     game_id = "local_demo_game"
-    active_context_game_id = game_id
+    g.active_context_game_id = game_id
     session["active_game_id"] = game_id
     current_game_players = [
         {"player_id": "player1", "name": session.get("username", "Player 1")},
@@ -1312,6 +1336,8 @@ def singleplayer():
     property_houses = {}
     property_landing_counts = {}
     restart_votes = set()
+
+    save_active_game_context()
 
     broadcast_game_state()
 
@@ -1356,7 +1382,13 @@ def register():
         )
 
         db.session.add(new_user)
-        db.session.commit()
+        try:
+            safe_db_commit("user registration")
+        except Exception:
+            return render_template(
+                "register.html",
+                error="Registration failed. Please try again."
+            )
 
         session["user_id"] = new_user.id
         session["username"] = new_user.username
@@ -1419,7 +1451,11 @@ def profile():
 
         user.bio = bio[:300]
         user.profile_public = profile_public
-        db.session.commit()
+        try:
+            safe_db_commit("update user profile")
+        except Exception:
+            logger.error("Failed to update profile", exc_info=True)
+            return redirect(url_for("profile", next=back_url, error="Failed to update profile"))
 
         return redirect(url_for("profile", next=back_url))
 
@@ -1607,7 +1643,11 @@ def create_browser_lobby():
     )
 
     db.session.add(new_lobby)
-    db.session.commit()
+    try:
+        safe_db_commit("create new lobby")
+    except Exception:
+        logger.error("Failed to create lobby", exc_info=True)
+        return redirect(url_for("lobby_browser", create_lobby_error="Failed to create lobby. Please try again."))
 
     host_player = LobbyPlayer(
         lobby_id=new_lobby.id,
@@ -1624,7 +1664,11 @@ def create_browser_lobby():
 
     db.session.add(host_player)
     db.session.add(welcome_message)
-    db.session.commit()
+    try:
+        safe_db_commit("lobby creation")
+    except Exception:
+        logger.error("Failed to create lobby", exc_info=True)
+        return redirect(url_for("lobby_browser", create_lobby_error="Failed to create lobby. Please try again."))
 
     return redirect(url_for("lobby_page", lobby_id=new_lobby.id))
 
@@ -1663,7 +1707,11 @@ def join_browser_lobby(lobby_id):
     )
 
     db.session.add(player)
-    db.session.commit()
+    try:
+        safe_db_commit("joining lobby")
+    except Exception:
+        logger.error("Failed to join lobby", exc_info=True)
+        return redirect(url_for("lobby_browser"))
 
     return redirect(url_for("lobby_page", lobby_id=lobby.id))
 
@@ -1719,7 +1767,11 @@ def quick_join_lobby():
 
     db.session.add(player)
     db.session.add(message)
-    db.session.commit()
+    try:
+        safe_db_commit("quick join")
+    except Exception:
+        logger.error("Failed to quick join", exc_info=True)
+        return redirect(url_for("lobby_browser"))
 
     return redirect(url_for("lobby_page", lobby_id=selected_lobby.id))
 
@@ -1838,7 +1890,10 @@ def toggle_lobby_ready(lobby_id):
         return redirect(url_for("lobby_page", lobby_id=lobby_id))
 
     player.is_ready = not player.is_ready
-    db.session.commit()
+    try:
+        safe_db_commit("toggle lobby ready")
+    except Exception:
+        logger.error("Failed to toggle ready", exc_info=True)
 
     return redirect(url_for("lobby_page", lobby_id=lobby_id))
 
@@ -1870,7 +1925,10 @@ def leave_lobby(lobby_id):
 
     if not remaining_players:
         db.session.delete(lobby)
-        db.session.commit()
+        try:
+            safe_db_commit("leave lobby - delete empty lobby")
+        except Exception:
+            logger.error("Failed to delete empty lobby", exc_info=True)
         return redirect(url_for("lobby_browser"))
 
     if was_host:
@@ -1889,7 +1947,10 @@ def leave_lobby(lobby_id):
 
     lobby.status = "waiting"
 
-    db.session.commit()
+    try:
+        safe_db_commit("leave lobby")
+    except Exception:
+        logger.error("Failed to leave lobby", exc_info=True)
 
     return redirect(url_for("lobby_browser"))
 
@@ -1909,7 +1970,10 @@ def lobby_chat(lobby_id):
             message_text=message_text
         )
         db.session.add(message)
-        db.session.commit()
+        try:
+            safe_db_commit("lobby chat message")
+        except Exception:
+            logger.error("Failed to save chat message", exc_info=True)
 
     return redirect(url_for("lobby_page", lobby_id=lobby_id))
 
@@ -1917,7 +1981,7 @@ def lobby_chat(lobby_id):
 @app.route("/lobby/<int:lobby_id>/start", methods=["POST"])
 def start_lobby_game_from_lobby(lobby_id):
     global game_state, game_log, game_chat_messages, last_roll, can_buy, game_over, waiting_for_ai, game_id
-    global current_game_players, property_houses, property_landing_counts, restart_votes, active_context_game_id
+    global current_game_players, property_houses, property_landing_counts, restart_votes
 
     if "username" not in session:
         return redirect(url_for("login"))
@@ -1968,10 +2032,14 @@ def start_lobby_game_from_lobby(lobby_id):
         ))
 
     lobby.status = "in_game"
-    db.session.commit()
+    try:
+        safe_db_commit("start lobby game")
+    except Exception:
+        logger.error("Failed to start lobby game", exc_info=True)
+        return redirect(url_for("lobby_page", lobby_id=lobby.id))
 
     game_id = f"lobby_{lobby.id}_game"
-    active_context_game_id = game_id
+    g.active_context_game_id = game_id
     session["active_game_id"] = game_id
 
     ordered_lobby_players = sorted(
@@ -2015,6 +2083,8 @@ def start_lobby_game_from_lobby(lobby_id):
     property_landing_counts = {}
     restart_votes = set()
 
+    save_active_game_context()
+
     return redirect(url_for("game_page", game_id=game_id))
 
 
@@ -2022,10 +2092,10 @@ def start_lobby_game_from_lobby(lobby_id):
 @app.route("/lobby/start", methods=["POST"])
 def start_lobby_game():
     global game_state, game_log, game_chat_messages, last_roll, can_buy, game_over, waiting_for_ai, game_id
-    global current_game_players, property_houses, property_landing_counts, restart_votes, active_context_game_id
+    global current_game_players, property_houses, property_landing_counts, restart_votes
 
     game_id = "local_demo_game"
-    active_context_game_id = game_id
+    g.active_context_game_id = game_id
     session["active_game_id"] = game_id
     current_game_players = list(players)
     game_state = engine.initialize_game(current_game_players)
@@ -2049,6 +2119,8 @@ def start_lobby_game():
     ]
 }
 
+    save_active_game_context()
+
     return redirect(url_for("game_page", game_id=game_id))
 
 @app.route("/game/<game_id>/state")
@@ -2065,6 +2137,12 @@ def game_state_status(game_id):
         return jsonify({
             "ok": True,
             "redirect_url": url_for("lobby_page", lobby_id=lobby.id)
+        })
+
+    if game_state is None:
+        return jsonify({
+            "ok": True,
+            "redirect_url": url_for("lobby_browser")
         })
 
     player = get_visible_player()
@@ -2141,6 +2219,9 @@ def game_state_status(game_id):
 
 @app.route("/game-chat", methods=["POST"])
 def game_chat():
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
+    
     message_text = request.form.get("message", "").strip()
 
     if message_text:
@@ -2183,7 +2264,10 @@ def leave_game_room(game_id):
 
     if player.is_host:
         db.session.delete(lobby)
-        db.session.commit()
+        try:
+            safe_db_commit("leave game - delete lobby")
+        except Exception:
+            logger.error("Failed to delete lobby when leaving", exc_info=True)
         return redirect(url_for("lobby_browser"))
 
     db.session.delete(player)
@@ -2198,19 +2282,27 @@ def leave_game_room(game_id):
 
     lobby.status = "waiting"
 
-    db.session.commit()
+    try:
+        safe_db_commit("leave game room")
+    except Exception:
+        logger.error("Failed to leave game room", exc_info=True)
 
     return redirect(url_for("lobby_browser"))
 
 
 @app.route("/game/<game_id>")
 def game_page(game_id):
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
     update_buy_status()
     return render_game_page()
 
 
 @app.route("/roll", methods=["POST"])
 def roll_dice():
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
+    
     if game_over or can_buy or waiting_for_ai:
         if is_ajax_request():
             return ajax_dice_response(last_roll)
@@ -2234,6 +2326,9 @@ def roll_dice():
 @app.route("/buy", methods=["POST"])
 def buy_property():
     global waiting_for_ai
+
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
 
     if game_over:
         if is_ajax_request():
@@ -2312,6 +2407,9 @@ def buy_property():
 def skip_buy():
     global waiting_for_ai
 
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
+
     if game_over:
         if is_ajax_request():
             return render_game_page()
@@ -2343,6 +2441,9 @@ def skip_buy():
 @app.route("/ai-turn", methods=["POST"])
 def ai_turn():
     global waiting_for_ai, last_roll
+
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
 
     # In LAN multiplayer there is no AI. The second turn must be taken by the real player2 browser.
     if not is_singleplayer_mode():
@@ -2400,6 +2501,9 @@ def ai_turn():
 
 @app.route("/jail/pay", methods=["POST"])
 def jail_pay_fine():
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
+    
     current_user_player_id = get_current_user_player_id()
     if not get_jail_action_info()["can_choose_jail_action"]:
         if is_ajax_request():
@@ -2416,6 +2520,9 @@ def jail_pay_fine():
 
 @app.route("/jail/use-card", methods=["POST"])
 def jail_use_card():
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
+    
     current_user_player_id = get_current_user_player_id()
     info = get_jail_action_info()
     if not info["can_choose_jail_action"] or info["jail_cards"] <= 0:
@@ -2433,6 +2540,9 @@ def jail_use_card():
 
 @app.route("/jail/buy-card", methods=["POST"])
 def jail_buy_card():
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
+    
     current_user_player_id = get_current_user_player_id()
     info = get_jail_action_info()
     if not info["can_choose_jail_action"] or not info["jail_card_sellers"]:
@@ -2461,6 +2571,9 @@ def jail_buy_card():
 @app.route("/build-house", methods=["POST"])
 def build_house():
     global can_buy, waiting_for_ai
+
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
 
     if game_over:
         return redirect(url_for("game_page", game_id=game_id))
@@ -2523,6 +2636,9 @@ def build_house():
 def sell_house():
     global can_buy, waiting_for_ai
 
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
+
     if game_over:
         return redirect(url_for("game_page", game_id=game_id))
 
@@ -2582,6 +2698,9 @@ def sell_house():
 @app.route("/sell-property", methods=["POST"])
 def sell_property():
     global can_buy, waiting_for_ai
+
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
 
     if game_over:
         return redirect(url_for("game_page", game_id=game_id))
@@ -2645,6 +2764,9 @@ def reset_game():
     global game_state, game_log, game_chat_messages, last_roll, can_buy, game_over, waiting_for_ai, property_houses, property_landing_counts
     global current_game_players, restart_votes
 
+    if game_state is None:
+        return redirect(url_for("lobby_browser"))
+
     current_user_player_id = get_current_user_player_id()
 
     if is_singleplayer_mode():
@@ -2682,6 +2804,8 @@ def reset_game():
     waiting_for_ai = False
     property_houses = {}
     property_landing_counts = {}
+
+    save_active_game_context()
 
     broadcast_game_state()
 

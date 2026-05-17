@@ -576,7 +576,11 @@
                                     Choose Buy or Skip before rolling again.
                                     {% endif %}
                                 </div>
-                        " style="grid-column: 1; grid-row: 8;">
+                            <div data-tile-position="13" class="tile 
+                                {% if position == 13 %}active-tile{% endif %}
+                                {% if property_owners.get(13) == 'player1' %}owned-player{% endif %}
+                                {% if property_owners.get(13) and property_owners.get(13) != 'player1' %}owned-ai{% endif %}
+                            " style="grid-column: 1; grid-row: 8;">
                                 <div class="color-bar" style="background-color: #ff0080;"></div> <span
                                     class="title">Victoria Park</span><span class="price">$140</span>
                                 {% if position == 13 %}
@@ -587,10 +591,10 @@
                                 {% endif %}
                             </div>
                             <div data-tile-position="14" class="tile 
-                            {% if position == 14 %}active-tile{% endif %}
-                            {% if property_owners.get(14) == 'player1' %}owned-player{% endif %}
-                            {% if property_owners.get(14) and property_owners.get(14) != 'player1' %}owned-ai{% endif %}
-                        " style="grid-column: 1; grid-row: 7;">
+                                {% if position == 14 %}active-tile{% endif %}
+                                {% if property_owners.get(14) == 'player1' %}owned-player{% endif %}
+                                {% if property_owners.get(14) and property_owners.get(14) != 'player1' %}owned-ai{% endif %}
+                            " style="grid-column: 1; grid-row: 7;">
                                 <div class="color-bar" style="background-color: #ff0080;"></div> <span
                                     class="title">South Perth</span><span class="price">$160</span>
                                 {% if position == 14 %}
@@ -601,10 +605,10 @@
                                 {% endif %}
                             </div>
                             <div data-tile-position="15" class="tile 
-                            {% if position == 15 %}active-tile{% endif %}
-                            {% if property_owners.get(15) == 'player1' %}owned-player{% endif %}
-                            {% if property_owners.get(15) and property_owners.get(15) != 'player1' %}owned-ai{% endif %}
-                        " style="grid-column: 1; grid-row: 6;">
+                                {% if position == 15 %}active-tile{% endif %}
+                                {% if property_owners.get(15) == 'player1' %}owned-player{% endif %}
+                                {% if property_owners.get(15) and property_owners.get(15) != 'player1' %}owned-ai{% endif %}
+                            " style="grid-column: 1; grid-row: 6;">
                                 <span class="non-prop-title">Australian Rail Track<br>Corporation</span><span
                                     class="price">$200</span>
                                 {% if position == 15 %}
