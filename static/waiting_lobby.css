@@ -1,3 +1,137 @@
 body {
-    background-color: #f4f4f9;
+    min-height: 100vh;
+    background:
+        linear-gradient(rgba(238, 243, 232, 0.92), rgba(248, 244, 232, 0.92)),
+        repeating-linear-gradient(
+            0deg,
+            rgba(15, 23, 42, 0.035) 0,
+            rgba(15, 23, 42, 0.035) 1px,
+            transparent 1px,
+            transparent 48px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            rgba(15, 23, 42, 0.035) 0,
+            rgba(15, 23, 42, 0.035) 1px,
+            transparent 1px,
+            transparent 48px
+        );
+    color: #10202f;
+}
+
+.navbar {
+    background: linear-gradient(135deg, #123047, #0f5d78) !important;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.18);
+}
+
+.navbar-brand {
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+.card {
+    border: 0;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.10) !important;
+}
+
+.card-body {
+    padding: 1.6rem;
+}
+
+.card-header {
+    border: 0;
+    padding: 1rem 1.35rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.card-header.bg-primary,
+.card-header.bg-success,
+.card-header.bg-info,
+.card-header.bg-secondary {
+    background: linear-gradient(135deg, #123047, #0f5d78) !important;
+}
+
+h2 {
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+.list-group-item {
+    border-color: rgba(15, 23, 42, 0.08);
+    padding: 1rem 1.35rem;
+    font-size: 1.02rem;
+}
+
+.list-group-item a {
+    color: #0f5d78;
+}
+
+.list-group-item a:hover {
+    color: #138a52;
+}
+
+.badge {
+    border-radius: 999px;
+    padding: 0.45rem 0.75rem;
+    font-weight: 800;
+}
+
+.btn {
+    border-radius: 999px;
+    font-weight: 800;
+    padding: 0.72rem 1rem;
+}
+
+.btn-primary,
+.btn-success {
+    background: linear-gradient(135deg, #138a52, #20b26b);
+    border: 0;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f8c33b, #f59e0b);
+    border: 0;
+    color: #10202f;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e11d48, #ef4444);
+    border: 0;
+}
+
+.btn-outline-light {
+    border-radius: 12px;
+}
+
+#chat-box {
+    background: rgba(255, 255, 255, 0.75) !important;
+}
+
+#chat-box p {
+    background: #ffffff;
+    border-left: 5px solid #0f5d78;
+    border-radius: 14px;
+    padding: 0.6rem 0.8rem;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.input-group .form-control {
+    border-radius: 999px 0 0 999px;
+    padding: 0.75rem 1rem;
+}
+
+.input-group .btn {
+    border-radius: 0 999px 999px 0;
+}
+
+.modal-content {
+    border-radius: 22px;
+}
+
+.modal-header,
+.modal-footer {
+    border: 0;
 }
