@@ -164,6 +164,7 @@
 
             <div class="card-body">
                 <form action="{{ url_for('profile') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
                         <label for="bio-input" class="form-label">Bio</label>
                         <textarea id="bio-input" name="bio" class="form-control" rows="3" maxlength="300"

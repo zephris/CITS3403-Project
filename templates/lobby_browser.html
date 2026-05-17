@@ -97,6 +97,7 @@
                                         {% else %}
                                         <form action="{{ url_for('join_browser_lobby', lobby_id=lobby.id) }}"
                                             method="post">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-sm btn-primary">
                                                 Join
                                             </button>
@@ -124,6 +125,7 @@
                         </button>
 
                         <form action="{{ url_for('quick_join_lobby') }}" method="post">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button id="quick-join-btn" type="submit" class="btn btn-outline-primary w-100">
                                 Quick Join
                             </button>
@@ -151,6 +153,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <form action="{{ url_for('create_browser_lobby') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="modal-header">
                         <h5 class="modal-title" id="createLobbyModalLabel">Create New Lobby</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
