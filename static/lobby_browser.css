@@ -1,3 +1,151 @@
 body {
-    background-color: #f4f4f9;
+    min-height: 100vh;
+    background:
+        linear-gradient(rgba(238, 243, 232, 0.92), rgba(248, 244, 232, 0.92)),
+        repeating-linear-gradient(
+            0deg,
+            rgba(15, 23, 42, 0.035) 0,
+            rgba(15, 23, 42, 0.035) 1px,
+            transparent 1px,
+            transparent 48px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            rgba(15, 23, 42, 0.035) 0,
+            rgba(15, 23, 42, 0.035) 1px,
+            transparent 1px,
+            transparent 48px
+        );
+    color: #10202f;
+}
+
+.navbar {
+    background: linear-gradient(135deg, #123047, #0f5d78) !important;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.18);
+}
+
+.navbar-brand {
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+.card {
+    border: 0;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.10) !important;
+}
+
+.card-body {
+    padding: 1.6rem;
+}
+
+.card-header {
+    border: 0;
+    padding: 1rem 1.35rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.card-header.bg-primary,
+.card-header.bg-success,
+.card-header.bg-info {
+    background: linear-gradient(135deg, #123047, #0f5d78) !important;
+}
+
+h2 {
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+.form-control,
+.form-select {
+    border-radius: 14px;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    padding: 0.75rem 1rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #0f5d78;
+    box-shadow: 0 0 0 0.2rem rgba(15, 93, 120, 0.18);
+}
+
+.btn {
+    border-radius: 999px;
+    font-weight: 800;
+    padding: 0.62rem 1rem;
+}
+
+.btn-primary,
+.btn-success {
+    background: linear-gradient(135deg, #138a52, #20b26b);
+    border: 0;
+}
+
+.btn-outline-primary {
+    color: #0f5d78;
+    border-color: #0f5d78;
+}
+
+.btn-outline-primary:hover {
+    background: #0f5d78;
+    border-color: #0f5d78;
+}
+
+.btn-outline-light {
+    border-radius: 12px;
+}
+
+.table {
+    vertical-align: middle;
+}
+
+.table thead th {
+    background: #f6f8f4;
+    color: #10202f;
+    font-weight: 800;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.table tbody tr {
+    transition: background-color 0.16s ease, transform 0.16s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(32, 178, 107, 0.08);
+}
+
+.badge {
+    border-radius: 999px;
+    padding: 0.55rem 0.75rem;
+    font-weight: 800;
+}
+
+.badge.bg-success {
+    background: #138a52 !important;
+}
+
+.badge.bg-secondary {
+    background: #6b7280 !important;
+}
+
+a {
+    color: #0f5d78;
+}
+
+a:hover {
+    color: #138a52;
+}
+
+.modal-content {
+    border-radius: 22px;
+}
+
+.modal-header {
+    border: 0;
+}
+
+.modal-footer {
+    border: 0;
 }
