@@ -553,61 +553,6 @@
                                 {% endif %}
                             </div>
 
-                            <div class="center-space">
-                                <h2 class="text-uppercase fw-bold mb-4" style="letter-spacing: 5px; color: #d32f2f;">
-                                    Monopoly</h2>
-                                <h4 class="text-muted mb-4">Perth Edition</h4>
-
-                                <div class="event-card-area">
-                                    <div class="event-card chance-card">
-                                        <div class="event-card-icon">?</div>
-                                        <div class="event-card-title">CHANCE</div>
-                                        <div class="event-card-subtitle">Draw a card and test your luck</div>
-                                        <div class="event-card-corner">🎲</div>
-                                    </div>
-
-                                    <div class="event-card chest-card">
-                                        <div class="event-card-icon">🎁</div>
-                                        <div class="event-card-title">COMMUNITY CHEST</div>
-                                        <div class="event-card-subtitle">Rewards, surprises, and unexpected events</div>
-                                        <div class="event-card-corner">🏦</div>
-                                    </div>
-                                </div>
-                                {% if not game_over %}
-                                {% if waiting_for_ai %}
-                                <div class="turn-status mt-4">
-                                    <span class="status-icon">{{ active_player_icon }}</span> {{ active_player_name }}
-                                    is taking a turn...
-                                </div>
-                                <div id="dice-animation" class="dice-stage" aria-live="polite">
-                                    <div id="dice-one" class="dice-face">⚀</div>
-                                    <div id="dice-two" class="dice-face">⚀</div>
-                                </div>
-                                <div id="dice-message" class="dice-message">{{ active_player_name }} is rolling...</div>
-                                {% elif not can_buy and is_current_user_turn %}
-                                <form id="roll-form" action="/roll" method="post" class="mt-4">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button id="roll-button" type="submit" class="btn btn-danger btn-lg fw-bold shadow">
-                                        🎲 {{ current_turn }} Roll Dice
-                                    </button>
-                                </form>
-
-                                <div id="dice-animation" class="dice-stage d-none" aria-live="polite">
-                                    <div id="dice-one" class="dice-face">⚀</div>
-                                    <div id="dice-two" class="dice-face">⚀</div>
-                                </div>
-                                <div id="dice-message" class="dice-message d-none">Rolling...</div>
-                                {% else %}
-                                <div class="turn-status mt-4">
-                                    {% if game_mode == "multiplayer" and not is_current_user_turn %}
-                                    <span class="status-icon">⏳</span> Waiting for {{ current_turn }} to play on another
-                                    device...
-                                    {% else %}
-                                    Choose Buy or Skip before rolling again.
-                                    {% endif %}
-                                </div>
-                                {% endif %}
-                                {% endif %}
                             <div data-tile-position="13" class="tile 
                                 {% if position == 13 %}active-tile{% endif %}
                                 {% if property_owners.get(13) == 'player1' %}owned-player{% endif %}
@@ -1383,21 +1328,28 @@
     <script>
         (function () {
             const diceFaces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+            let lobbySocket = null;
+            let lanPollingTimer = null;
+            let refreshInProgress = false;
 
-            function randomDie() {
-                return Math.floor(Math.random() * 6);
+            function getJsonScriptText(id, fallback) {
+                const element = document.getElementById(id);
+                return element ? element.textContent || fallback : fallback;
             }
 
             function getPropertyHouses() {
-                const dataScript = document.getElementById("property-house-data");
-                if (!dataScript) {
-                    return {};
-                }
-
                 try {
-                    return JSON.parse(dataScript.textContent || "{}");
+                    return JSON.parse(getJsonScriptText("property-house-data", "{}"));
                 } catch (error) {
                     return {};
+                }
+            }
+
+            function getPlayerTokenData() {
+                try {
+                    return JSON.parse(getJsonScriptText("player-token-data", "[]"));
+                } catch (error) {
+                    return [];
                 }
             }
 
@@ -1409,12 +1361,8 @@
                 const houses = getPropertyHouses();
                 Object.keys(houses).forEach(function (position) {
                     const count = Number(houses[position]);
-                    if (!count || count <= 0) {
-                        return;
-                    }
-
                     const tile = document.querySelector('[data-tile-position="' + position + '"]');
-                    if (!tile) {
+                    if (!count || !tile) {
                         return;
                     }
 
@@ -1425,23 +1373,8 @@
                 });
             }
 
-
-
-            function getPlayerTokenData() {
-                const dataScript = document.getElementById("player-token-data");
-                if (!dataScript) {
-                    return [];
-                }
-
-                try {
-                    return JSON.parse(dataScript.textContent || "[]");
-                } catch (error) {
-                    return [];
-                }
-            }
-
             function renderPlayerTokens() {
-                document.querySelectorAll(".player-token, .ai-token, .multi-player-token").forEach(function (element) {
+                document.querySelectorAll(".multi-player-token, .player-token, .ai-token").forEach(function (element) {
                     element.remove();
                 });
 
@@ -1451,11 +1384,9 @@
                     if (player.bankrupt) {
                         return;
                     }
-                    const pos = String(player.pos);
-                    if (!grouped[pos]) {
-                        grouped[pos] = [];
-                    }
-                    grouped[pos].push(player);
+                    const position = String(player.pos);
+                    grouped[position] = grouped[position] || [];
+                    grouped[position].push(player);
                 });
 
                 Object.keys(grouped).forEach(function (position) {
@@ -1480,6 +1411,44 @@
                 });
             }
 
+            function updatePageFromHtml(html) {
+                const newDocument = new DOMParser().parseFromString(html, "text/html");
+
+                ["game-board-panel", "game-sidebar"].forEach(function (id) {
+                    const currentElement = document.getElementById(id);
+                    const newElement = newDocument.getElementById(id);
+                    if (currentElement && newElement) {
+                        currentElement.innerHTML = newElement.innerHTML;
+                    }
+                });
+
+                ["property-house-data", "player-token-data"].forEach(function (id) {
+                    const currentElement = document.getElementById(id);
+                    const newElement = newDocument.getElementById(id);
+                    if (currentElement && newElement) {
+                        currentElement.textContent = newElement.textContent;
+                    }
+                });
+
+                document.body.dataset.waitingForAi = newDocument.body.dataset.waitingForAi || "false";
+                document.body.dataset.gameMode = newDocument.body.dataset.gameMode || "singleplayer";
+                document.body.dataset.currentUserTurn = newDocument.body.dataset.currentUserTurn || "false";
+                document.body.dataset.lobbyId = newDocument.body.dataset.lobbyId || "";
+
+                window.GAME_WAITING_FOR_AI = document.body.dataset.waitingForAi === "true";
+                window.GAME_MODE = document.body.dataset.gameMode || "singleplayer";
+                window.GAME_CURRENT_USER_TURN = document.body.dataset.currentUserTurn === "true";
+                window.GAME_LOBBY_ID = document.body.dataset.lobbyId || "";
+
+                renderHouseMarkers();
+                renderPlayerTokens();
+                setupRollForm();
+                setupActionForms();
+                setupLobbySocket();
+                setupLanPolling();
+                maybeRunAiTurn();
+            }
+
             function getDiceElements() {
                 return {
                     stage: document.getElementById("dice-animation"),
@@ -1489,191 +1458,112 @@
                 };
             }
 
-            function updatePageFromHtml(html) {
-                const parser = new DOMParser();
-                const newDocument = parser.parseFromString(html, "text/html");
-
-                const newBoardPanel = newDocument.getElementById("game-board-panel");
-                const currentBoardPanel = document.getElementById("game-board-panel");
-                if (newBoardPanel && currentBoardPanel) {
-                    currentBoardPanel.innerHTML = newBoardPanel.innerHTML;
-                }
-
-                const newSidebar = newDocument.getElementById("game-sidebar");
-                const currentSidebar = document.getElementById("game-sidebar");
-                if (newSidebar && currentSidebar) {
-                    currentSidebar.innerHTML = newSidebar.innerHTML;
-                }
-
-                const newHouseData = newDocument.getElementById("property-house-data");
-                const currentHouseData = document.getElementById("property-house-data");
-                if (newHouseData && currentHouseData) {
-                    currentHouseData.textContent = newHouseData.textContent;
-                }
-
-                const newPlayerData = newDocument.getElementById("player-token-data");
-                const currentPlayerData = document.getElementById("player-token-data");
-                if (newPlayerData && currentPlayerData) {
-                    currentPlayerData.textContent = newPlayerData.textContent;
-                }
-
-                renderHouseMarkers();
-                renderPlayerTokens();
-
-                window.GAME_WAITING_FOR_AI =
-                    newDocument.body && newDocument.body.dataset.waitingForAi === "true";
-                window.GAME_MODE =
-                    newDocument.body && newDocument.body.dataset.gameMode || "singleplayer";
-                window.GAME_CURRENT_USER_TURN =
-                    newDocument.body && newDocument.body.dataset.currentUserTurn === "true";
-                window.GAME_LOBBY_ID =
-                    newDocument.body && newDocument.body.dataset.lobbyId || window.GAME_LOBBY_ID || "";
-
-                setupRollForm();
-                setupActionForms();
-                maybeRunAiTurn();
-                setupLobbySocket();
-                setupLanPolling();
-            }
-
-            async function playDiceAndFetch(url, actor) {
+            function showDiceRoll(actor, finalTotal) {
                 const dice = getDiceElements();
                 if (!dice.stage || !dice.one || !dice.two || !dice.message) {
                     return;
                 }
 
-                const rollButton = document.getElementById("roll-button");
-                if (rollButton) {
-                    rollButton.disabled = true;
-                    rollButton.innerText = actor === "ai" ? "AI Rolling..." : "Rolling...";
+                const first = Math.max(1, Math.min(6, Math.floor((finalTotal - 1) / 2)));
+                const second = Math.max(1, Math.min(6, finalTotal - first));
+
+                dice.stage.classList.remove("d-none");
+                dice.stage.classList.remove("rolling");
+                dice.stage.classList.add("dice-final");
+                dice.one.textContent = diceFaces[first - 1];
+                dice.two.textContent = diceFaces[second - 1];
+                dice.message.classList.remove("d-none");
+                dice.message.textContent = actor === "ai" ? "AI rolled " + finalTotal : "You rolled " + finalTotal;
+            }
+
+            async function postForm(form) {
+                const response = await fetch(form.action, {
+                    method: "POST",
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    body: new FormData(form)
+                });
+
+                const contentType = response.headers.get("content-type") || "";
+                if (contentType.includes("application/json")) {
+                    return await response.json();
                 }
 
-                dice.stage.classList.remove("d-none", "dice-final");
-                dice.stage.classList.add("rolling");
-                dice.message.classList.remove("d-none");
-                dice.message.innerText = actor === "ai" ? "{{ active_player_name }} is rolling..." : "Rolling...";
+                return { html: await response.text() };
+            }
 
-                const rollingTimer = setInterval(function () {
-                    dice.one.innerText = diceFaces[randomDie()];
-                    dice.two.innerText = diceFaces[randomDie()];
-                }, 90);
-
-                try {
-                    let lanPollingTimer = null;
-                    let lastStateSignature = "";
-                    let isUpdatingFromPoll = false;
-                    let lobbySocket = null;
-
-                    function buildFallbackSignature(data) {
-                        return JSON.stringify({
-                            game_id: data.game_id,
-                            game_mode: data.game_mode,
-                            current_turn: data.current_turn,
-                            current_user_player_id: data.current_user_player_id,
-                            is_current_user_turn: data.is_current_user_turn,
-                            can_buy: data.can_buy,
-                            player_position: data.player_position,
-                            second_player_position: data.second_player_position,
-                            money: data.money,
-                            second_player_money: data.second_player_money,
-                            all_players: data.all_players,
-                            game_log_count: data.game_log_count,
-                            restart_votes_count: data.restart_votes_count,
-                            restart_required_count: data.restart_required_count,
-                            restart_has_voted: data.restart_has_voted
-                        });
+            function setupActionForms() {
+                document.querySelectorAll(".ajax-action-form").forEach(function (form) {
+                    if (form.dataset.bound === "true") {
+                        return;
                     }
-                rollForm.dataset.ajaxReady = "true";
-                rollForm.addEventListener("submit", function (event) {
-                    event.preventDefault();
-                    playDiceAndFetch(rollForm.getAttribute("action"), "player");
+
+                    form.dataset.bound = "true";
+                    form.addEventListener("submit", async function (event) {
+                        event.preventDefault();
+
+                        try {
+                            const result = await postForm(form);
+                            if (result && result.dice_result) {
+                                showDiceRoll("player", result.dice_result);
+                            }
+                            if (result && result.html) {
+                                updatePageFromHtml(result.html);
+                            }
+                        } catch (error) {
+                            console.error("Action submission failed:", error);
+                        }
+                    });
                 });
             }
 
-            function maybeRunAiTurn() {
-                // Only the singleplayer mode has an AI turn.
-                // In LAN multiplayer the second turn must be played by the real Player 2 browser.
-                if (!window.GAME_WAITING_FOR_AI || window.GAME_MODE !== "singleplayer") {
+            function setupRollForm() {
+                const rollForm = document.getElementById("roll-form");
+                if (!rollForm || rollForm.dataset.bound === "true") {
                     return;
                 }
 
-                setTimeout(function () {
-                    playDiceAndFetch("/ai-turn", "ai");
-                }, 500);
+                rollForm.dataset.bound = "true";
+                rollForm.addEventListener("submit", async function (event) {
+                    event.preventDefault();
+
+                    try {
+                        const result = await postForm(rollForm);
+                        if (result && result.dice_result) {
+                            showDiceRoll("player", result.dice_result);
+                        }
+                        if (result && result.html) {
+                            updatePageFromHtml(result.html);
+                        }
+                    } catch (error) {
+                        console.error("Roll submission failed:", error);
+                    }
+                });
             }
 
-
-            let lanPollingTimer = null;
-            let lastStateSignature = "";
-            let isUpdatingFromPoll = false;
- 
-
-    async function refreshGameState() {
-        if (isUpdatingFromPoll) {
-            return;
-        }
-
-        // Do not replace the board while a dice animation or button action is already running.
-        if (document.querySelector(".rolling") || document.querySelector("button:disabled")) {
-            return;
-        }
-
-        try {
-            isUpdatingFromPoll = true;
-
-            const response = await fetch(window.GAME_STATE_URL, {
-                method: "GET",
-                headers: { "X-Requested-With": "XMLHttpRequest" }
-            });
-
-            const data = await response.json();
-            if (!data || !data.ok) {
-                return;
-
             async function refreshGameState() {
-                if (isUpdatingFromPoll) {
+                if (refreshInProgress) {
                     return;
                 }
 
-                // Do not replace the board while a dice animation or button action is already running.
-                if (document.querySelector(".rolling") || document.querySelector("button:disabled")) {
-                    return;
-                }
-
+                refreshInProgress = true;
                 try {
-                    isUpdatingFromPoll = true;
-
                     const response = await fetch(window.GAME_STATE_URL, {
-                        method: "GET",
                         headers: { "X-Requested-With": "XMLHttpRequest" }
                     });
-
                     const data = await response.json();
-                    if (!data || !data.ok) {
-                        return;
-                    }
 
                     if (data.redirect_url) {
                         window.location.href = data.redirect_url;
                         return;
                     }
 
-                    const newSignature = data.state_signature || buildFallbackSignature(data);
-
-                    if (newSignature === lastStateSignature) {
-                        return;
-                    }
-
-                    lastStateSignature = newSignature;
-
                     if (data.html) {
                         updatePageFromHtml(data.html);
                     }
                 } catch (error) {
-                    // Keep quiet so temporary LAN/network hiccups do not annoy players.
                     console.log("State refresh failed:", error);
                 } finally {
-                    isUpdatingFromPoll = false;
+                    refreshInProgress = false;
                 }
             }
 
@@ -1683,16 +1573,10 @@
                     lanPollingTimer = null;
                 }
 
-                if (window.GAME_WEBSOCKET_ACTIVE) {
+                if (window.GAME_WEBSOCKET_ACTIVE || window.GAME_MODE !== "multiplayer") {
                     return;
                 }
 
-                if (window.GAME_MODE !== "multiplayer") {
-                    return;
-                }
-
-                // Polling keeps LAN players synced. Restart votes can be requested by
-                // either player, so both browsers should poll, even on the current turn.
                 lanPollingTimer = setInterval(refreshGameState, 3000);
             }
 
@@ -1724,18 +1608,43 @@
                     }
                 });
 
-                lobbySocket.on("game_state_updated", function () {
+                lobbySocket.on("game_state_updated", function (payload) {
+                    if (payload && payload.html) {
+                        updatePageFromHtml(payload.html);
+                        return;
+                    }
+
                     refreshGameState();
                 });
+            }
+
+            function maybeRunAiTurn() {
+                if (!window.GAME_WAITING_FOR_AI || window.GAME_MODE !== "singleplayer") {
+                    return;
+                }
+
+                setTimeout(function () {
+                    const aiTurnForm = document.createElement("form");
+                    aiTurnForm.action = "/ai-turn";
+                    aiTurnForm.method = "post";
+                    aiTurnForm.innerHTML = '<input type="hidden" name="csrf_token" value="' + (window.CSRF_TOKEN || "") + '">';
+                    postForm(aiTurnForm).then(function (result) {
+                        if (result && result.html) {
+                            updatePageFromHtml(result.html);
+                        }
+                    }).catch(function (error) {
+                        console.error("AI turn failed:", error);
+                    });
+                }, 500);
             }
 
             renderHouseMarkers();
             renderPlayerTokens();
             setupRollForm();
             setupActionForms();
-            maybeRunAiTurn();
             setupLobbySocket();
             setupLanPolling();
+            maybeRunAiTurn();
         })();
     </script>
 </body>

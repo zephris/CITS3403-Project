@@ -124,6 +124,11 @@
                             Create Lobby
                         </button>
 
+                        <button id="join-code-btn" type="button" class="btn btn-info w-100" data-bs-toggle="modal"
+                            data-bs-target="#joinByCodeModal">
+                            Join by Room Code
+                        </button>
+
                         <form action="{{ url_for('quick_join_lobby') }}" method="post">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button id="quick-join-btn" type="submit" class="btn btn-outline-primary w-100">
@@ -195,6 +200,34 @@
                         <button type="submit" class="btn btn-success">
                             Create Lobby
                         </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="joinByCodeModal" tabindex="-1" aria-labelledby="joinByCodeModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('join_lobby_by_code_form') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="joinByCodeModalLabel">Join by Room Code</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="room-code-input" class="form-label">Room Code</label>
+                            <input id="room-code-input" name="room_code" type="text" class="form-control"
+                                placeholder="Enter the 8-character room code" maxlength="8" required>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-info">Join Lobby</button>
                     </div>
                 </form>
             </div>
@@ -275,6 +308,39 @@
         document.addEventListener("DOMContentLoaded", function () {
             const createLobbyErrorModal = new bootstrap.Modal(document.getElementById("createLobbyErrorModal"));
             createLobbyErrorModal.show();
+        });
+    </script>
+    {% endif %}
+    {% if join_code_error %}
+    <div class="modal fade" id="joinCodeErrorModal" tabindex="-1" aria-labelledby="joinCodeErrorModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0 rounded-4">
+                <div class="modal-header bg-warning text-dark rounded-top-4">
+                    <h5 class="modal-title fw-bold" id="joinCodeErrorModalLabel">
+                        ⚠️ Failed to Join by Room Code
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p class="mb-2">
+                        {{ join_code_error }}
+                    </p>
+                </div>
+
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const joinCodeErrorModal = new bootstrap.Modal(document.getElementById("joinCodeErrorModal"));
+            joinCodeErrorModal.show();
         });
     </script>
     {% endif %}

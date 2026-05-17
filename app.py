@@ -57,7 +57,17 @@ def csrf_protect():
 
     if not submitted_token or not session_token or submitted_token != session_token:
         return "Invalid CSRF token", 403
-config = load_game_config("template/backend/app/game_logic/data/monopoly_standard.json")
+
+config_path = os.path.join(
+    os.path.dirname(__file__),
+    "template",
+    "backend",
+    "app",
+    "game_logic",
+    "data",
+    "monopoly_standard.json",
+)
+config = load_game_config(config_path)
 engine = GameEngine(config)
 
 players = [
@@ -461,6 +471,7 @@ def broadcast_game_state():
         "game_state_updated",
         {
             "game_id": game_id,
+            "html": render_game_html(),
         },
         to=f"lobby_{lobby_id}",
     )
@@ -1578,6 +1589,7 @@ def lobby_browser():
     search_text = request.args.get("search", "").strip()
     quick_join_error = request.args.get("quick_join_error")
     create_lobby_error = request.args.get("create_lobby_error")
+    join_code_error = request.args.get("join_code_error")
 
     query = Lobby.query.filter(Lobby.status != "in_game")
 
@@ -1599,6 +1611,7 @@ def lobby_browser():
         search_text=search_text,
         quick_join_error=quick_join_error,
         create_lobby_error=create_lobby_error,
+        join_code_error=join_code_error,
         online_players=12,
         open_rooms=open_rooms
     )
@@ -1774,6 +1787,56 @@ def quick_join_lobby():
         return redirect(url_for("lobby_browser"))
 
     return redirect(url_for("lobby_page", lobby_id=selected_lobby.id))
+
+
+@app.route("/browser/join-by-code", methods=["POST"])
+def join_lobby_by_code_form():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+    room_code = request.form.get("room_code", "").strip().upper()
+
+    if not room_code:
+        return redirect(url_for("lobby_browser", join_code_error="Please enter a room code."))
+
+    lobby = Lobby.query.filter_by(invite_code=room_code).first()
+
+    if lobby is None:
+        return redirect(url_for("lobby_browser", join_code_error="Invalid room code. Please check and try again."))
+
+    if lobby.status == "in_game":
+        return redirect(url_for("lobby_browser", join_code_error="This room's game is already in progress."))
+
+    existing_player = LobbyPlayer.query.filter_by(lobby_id=lobby.id, player_name=username).first()
+    if existing_player is not None:
+        return redirect(url_for("lobby_page", lobby_id=lobby.id))
+
+    if len(lobby.players) >= lobby.max_players:
+        return redirect(url_for("lobby_browser", join_code_error="This room is full. Unable to join."))
+
+    player = LobbyPlayer(
+        lobby_id=lobby.id,
+        player_name=username,
+        is_host=False,
+        is_ready=False,
+    )
+
+    message = LobbyMessage(
+        lobby_id=lobby.id,
+        sender_name="System",
+        message_text=f"{username} joined the lobby using the room code.",
+    )
+
+    db.session.add(player)
+    db.session.add(message)
+    try:
+        safe_db_commit("join by code")
+    except Exception:
+        logger.error("Failed to join by code", exc_info=True)
+        return redirect(url_for("lobby_browser", join_code_error="An error occurred while joining. Please try again."))
+
+    return redirect(url_for("lobby_page", lobby_id=lobby.id))
 
 @app.route("/lobby/<int:lobby_id>")
 def lobby_page(lobby_id):

@@ -4,3 +4,5 @@ instance/
 app.db
 *.db
 .env
+.vscode/
+task_script.py

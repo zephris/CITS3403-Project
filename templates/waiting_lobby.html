@@ -42,7 +42,16 @@
                             <span id="host-name">{{ lobby.host_name }}</span>
                         </p>
 
-                        
+                        {% if lobby.lobby_type == "private" %}
+                        <div class="alert alert-info mb-3">
+                            <strong>Room Code:</strong>
+                            <code id="room-code" class="d-block mt-2 fs-5">{{ lobby.invite_code }}</code>
+                            <small class="d-block mt-2">Share this code with friends to invite them to your room.</small>
+                            <button type="button" class="btn btn-sm btn-outline-info mt-2" onclick="copyRoomCode()">
+                                Copy Code
+                            </button>
+                        </div>
+                        {% endif %}
 
                         <p class="mb-2">
                             <strong>Players:</strong>
@@ -186,6 +195,22 @@
         }, 2000);
     </script>
     <script src="{{ url_for('static', filename='waiting_lobby.js') }}"></script>
+
+    <script>
+        function copyRoomCode() {
+            const codeElement = document.getElementById("room-code");
+            if (!codeElement) {
+                return;
+            }
+
+            const code = codeElement.textContent.trim();
+            navigator.clipboard.writeText(code).then(function () {
+                alert("Room code copied to clipboard.");
+            }).catch(function (error) {
+                console.error("Failed to copy room code:", error);
+            });
+        }
+    </script>
 
     {% if start_error %}
     <div class="modal fade" id="startErrorModal" tabindex="-1" aria-labelledby="startErrorModalLabel"
